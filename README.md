@@ -20,7 +20,7 @@ By utilizing a live menu bar countdown, it leverages cognitive design, giving us
 
 ![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization2.png?raw=true)
 ## Basic use
-Install the .pkg and that's it, no configuration needed. Once an update blueprint is deployed, the menubar will display the time remaining.
+Install the .pkg and that's it, no configuration needed. Once an update blueprint is deployed from your MDM, the menubar will display the time remaining.
 
 ## Advanced use
 
