@@ -47,7 +47,7 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
     	<key>reminderIntervalMinutes</key>
     	<integer>120</integer>
     	<key>reminderNotificationBody</key>
-    	<string>n update to macOS $VERSION has been scheduled for $DATE.</string>
+    	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
     	<key>reminderNotificationTitle</key>
     	<string>Managed Update</string>
     	<key>reminderThresholdDays</key>
