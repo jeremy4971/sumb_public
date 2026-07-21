@@ -22,11 +22,40 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
 
 ## Advanced use
 
-### Configuration Profile
-Soon.
+### Configuration Profile : fr.jeremyb.sumb
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+    	<key>disableContextMenuActions</key>
+    	<false/>
+    	<key>localizedDaySuffix</key>
+    	<string>d</string>
+    	<key>localizedPopoverTitle</key>
+    	<string>macOS Update</string>
+    	<key>localizedRestartWarning</key>
+    	<string>Your device will restart and update once the deadline passes.</string>
+    	<key>localizedUpToDateMessage</key>
+    	<string>Your Mac is up to date.</string>
+    	<key>localizedUpdateNowButton</key>
+    	<string>Update Now</string>
+    	<key>localizedUpdatingMenuBar</key>
+    	<string>Preparing update...</string>
+    	<key>notificationsEnabled</key>
+    	<false/>
+    	<key>reminderNotificationBody</key>
+    	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+    	<key>reminderNotificationTitle</key>
+    	<string>Managed Update</string>
+    	<key>reminderThresholdDays</key>
+    	<integer>4</integer>
+    </dict>
+    </plist>
 
 ### Managed Notification
 Soon.
 
 ### Managed LaunchAgent
 Soon.
+
