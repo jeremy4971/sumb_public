@@ -3,6 +3,8 @@ If you're tired of traditional update tools like Nudge or SUPERMAN having a horr
 
 It’s a native Swift companion app for scheduled macOS updates via blueprints. By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot _on their own terms_, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting
 
+**Notes :** Even if Apple releases a system update, SUMB will consider the Mac up to date. The menu bar will only start a countdown when a blueprint reaches the computer.
+
 ✅ Free.  ✅ Apple inspired UI.  ✅ Texts customization.  ✅ Signed and notarized.  
 
 ## Screenshots
@@ -19,8 +21,6 @@ It’s a native Swift companion app for scheduled macOS updates via blueprints. 
 ![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization2.png?raw=true)
 ## Basic use
 Install the .pkg and that's it, no configuration needed. Once an update blueprint is deployed from your MDM, the menubar will display the time remaining.
-
-**Notes :** Even if Apple release a system update, SUMB will consider the Mac up to date. The menu bar will only start a countdown when a blueprint reaches the computer.
 
 ## Advanced use
 
