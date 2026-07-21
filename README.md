@@ -12,7 +12,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 ## Screenshots
 ![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update.png?raw=true)
 
-![Custom notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom-notification-2.png?raw=true)
+![Custom notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom-notification-3.png?raw=true)
 
 ![Past deadline](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-past-deadline.png?raw=true)
 
