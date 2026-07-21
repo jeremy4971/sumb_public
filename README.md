@@ -35,7 +35,7 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
     	<key>localizedPopoverTitle</key>
     	<string>macOS Update</string>
     	<key>localizedRestartWarning</key>
-    	<string>Your device will restart and update once the deadline passes.</string>
+    	<string>Be aware that your Mac will automatically restart after the deadline.</string>
     	<key>localizedUpToDateMessage</key>
     	<string>Your Mac is up to date.</string>
     	<key>localizedUpdateNowButton</key>
@@ -43,13 +43,15 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
     	<key>localizedUpdatingMenuBar</key>
     	<string>Preparing update...</string>
     	<key>notificationsEnabled</key>
-    	<false/>
+    	<true/>
+    	<key>reminderIntervalMinutes</key>
+    	<integer>120</integer>
     	<key>reminderNotificationBody</key>
-    	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+    	<string>n update to macOS $VERSION has been scheduled for $DATE.</string>
     	<key>reminderNotificationTitle</key>
     	<string>Managed Update</string>
     	<key>reminderThresholdDays</key>
-    	<integer>4</integer>
+    	<integer>2</integer>
     </dict>
     </plist>
 
@@ -58,3 +60,4 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
 
 ### Managed LaunchAgent
 Soon.
+
