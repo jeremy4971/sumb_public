@@ -54,8 +54,7 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
     </plist>
 
 ### Managed Notification
-Soon.
+![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed-notification.png?raw=true)
 
 ### Managed LaunchAgent
 Soon.
-
