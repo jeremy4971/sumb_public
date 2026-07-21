@@ -3,10 +3,7 @@ If you're tired of traditional update tools like Nudge or SUPERMAN having a horr
 
 It’s a native Swift companion app for scheduled macOS updates via blueprints. Instead of interrupting workflows with aggressive pop-ups, it lives discreetly in the menu bar with a live countdown. It also features optional notification reminders that actually respect the user's Focus mode. Basically, it keeps users informed without ruining their UX.
 
-✅ Free
-✅ Apple inspired UI
-✅ Texts customization
-✅ Signed and notarized
+✅ Free  ✅ Apple inspired UI. ✅ Texts customization  ✅ Signed and notarized
 
 ## Screenshots
 ![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update.png?raw=true)
