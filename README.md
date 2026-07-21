@@ -1,7 +1,9 @@
 ## SUMB (Scheduled Update Menu Bar)
 If you're tired of traditional update tools like Nudge or SUPERMAN having a horrible UI and getting right in the user's face, SUMB takes a much more user-first approach.
 
-It’s a native Swift companion app for scheduled macOS updates via blueprints. By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot _on their own terms_, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting. It also features optional notification reminders that actually respect the user's Focus mode.
+It’s a native Swift companion app for scheduled macOS updates via blueprints. Instead of interrupting workflows with aggressive pop-ups, it lives discreetly in the menu bar with a live countdown. It also features optional notification reminders that actually respect the user's Focus mode.
+
+By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot _on their own terms_, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting
 
 ✅ Free.  ✅ Apple inspired UI.  ✅ Texts customization.  ✅ Signed and notarized.  
 
@@ -18,7 +20,7 @@ It’s a native Swift companion app for scheduled macOS updates via blueprints. 
 
 ![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization2.png?raw=true)
 ## Basic use
-Install the .pkg and that's it, no configuration needed. Once an update blueprint is deployed from your MDM, the menu bar will display the time remaining.
+Install the .pkg and that's it, no configuration needed. Once an update blueprint is deployed, the menubar will display the time remaining.
 
 ## Advanced use
 
@@ -54,6 +56,8 @@ Install the .pkg and that's it, no configuration needed. Once an update blueprin
     	<integer>2</integer>
     </dict>
     </plist>
+### Blueprint example in Jamf
+![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
 ### Managed Notification
 ![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed-notification.png?raw=true)
