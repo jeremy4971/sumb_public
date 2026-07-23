@@ -26,7 +26,8 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
 
 ## Advanced use
 
-### Managed Configuration Profile : fr.jeremyb.sumb
+### Managed Settings
+#### Configuration Profile > Application & Custom Settings > : fr.jeremyb.sumb
 
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -58,7 +59,7 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
     	<integer>2</integer>
     </dict>
     </plist>
-### Blueprint example in Jamf
+### Example of a blueprint in Jamf
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
 ### Managed Notification
