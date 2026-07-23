@@ -26,7 +26,7 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
 
 ## Managed Settings with a Configuration Profile 
 
-### Application & Custom Settings
+### Application & Custom Settings : fr.jeremyb.sumb
 ![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png?raw=true)
 
     <?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +63,7 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
 ### Managed Notification
 ![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_notification.png?raw=true)
 
-### Managed Login Item (LaunchAgent)
+### Managed Login Item (LaunchAgent) : Team ID 73MS2PM6D7
 ![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png?raw=true)
 
 ### Unload LaunchAgent
