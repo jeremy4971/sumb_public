@@ -24,10 +24,10 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
 
 > Requires macOS 15.0 or later.
 
-## Advanced use
+## Managed Settings with a Configuration Profile 
 
-### Managed Settings
-#### Configuration Profile > Application & Custom Settings > : fr.jeremyb.sumb
+### Application & Custom Settings
+![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png?raw=true)
 
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -59,22 +59,22 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
     	<integer>2</integer>
     </dict>
     </plist>
-### Example of a blueprint in Jamf
-![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
 ### Managed Notification
-![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed-notification.png?raw=true)
+![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_notification.png?raw=true)
 
-### Managed LaunchAgent
-Soon.
+### Managed Login Item (LaunchAgent)
+![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png?raw=true)
 
 ### Unload LaunchAgent
 
     CURRENT_USER=$(stat -f %Su /dev/console)
     USER_ID=$(id -u "$CURRENT_USER")
     sudo launchctl bootout gui/$USER_ID /Library/LaunchAgents/fr.jeremyb.sumb.plist
-
     
 ### Extension Attribute
 
 In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/extension_attribute_jamf/scheduled-version-date.sh) to display a computer's update deadline. 
+
+### Example of a blueprint in Jamf
+![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
