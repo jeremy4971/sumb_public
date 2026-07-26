@@ -80,4 +80,6 @@ In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_publi
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
 ### Disclaimer
-Several parts of this app are AI coded. Use it at your own risk.
+This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. Please note that parts of this codebase contain AI-generated code.
+
+In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
