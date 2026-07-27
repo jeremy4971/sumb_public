@@ -1,7 +1,7 @@
 ## SUMB (Software Update Menu Bar)
-If you're tired of traditional update tools like Nudge or SUPERMAN having a horrible UI and getting right in the user's face, SUMB takes a much more user-first approach.
+If you've found traditional update tools like Nudge a little rough around the edges visually, SUMB takes a different approach, offering a cleaner, more user-first experience.
 
-It’s a native Swift companion app for scheduled macOS updates via blueprints. By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot _on their own terms_, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
+SUMB is a native Swift companion app for scheduled macOS updates via blueprints. By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
 
 Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](https://www.macadmins.org/) for news and share your feedback!
 
@@ -44,7 +44,7 @@ Just install the .pkg, no configuration needed. Once an update blueprint is depl
     	<key>localizedUpToDateMessage</key>
     	<string>Your Mac is up to date.</string>
     	<key>localizedUpdateNowButton</key>
-    	<string>Update Now</string>
+    	<string>Open Software Update</string>
     	<key>localizedUpdatingMenuBar</key>
     	<string>Preparing update...</string>
     	<key>notificationsEnabled</key>
