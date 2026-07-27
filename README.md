@@ -1,6 +1,4 @@
 ## SUMB (Software Update Menu Bar)
-If you've found traditional update tools like Nudge a little rough around the edges visually, SUMB takes a different approach, offering a cleaner, more user-first experience.
-
 SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
 
 Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](https://www.macadmins.org/) for news and share your feedback!
