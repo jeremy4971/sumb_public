@@ -108,7 +108,7 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 
 In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/extension_attribute_jamf/scheduled-version-date.sh) to display a computer's update deadline.
 
-### Example of a blueprint in Jamf
+### For Jamf, schedule a DDM update via the Blueprints menu
 
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
