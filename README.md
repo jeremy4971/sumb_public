@@ -122,7 +122,8 @@ In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_publi
 
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
-
+### On SimpleMDM, create a Managed Software Update profile
+![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png?raw=true)
 
 ### Disclaimer
 
