@@ -51,6 +51,8 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 <dict>
 	<key>disableContextMenuActions</key>
 	<false/>
+	<key>hideIconWhenUpToDate</key>
+	<false/>
 	<key>localizedDaySuffix</key>
 	<string>d</string>
 	<key>localizedPopoverTitle</key>
@@ -87,7 +89,15 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 
 ![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png?raw=true)
 
-  
+### Hide notch (experimental)
+When the menu bar is full, SUMB can get hidden behind the notch. Run the following command to reduce your display resolution and restore the entire menu bar. There is intentionally no managed key for this setting.
+
+    # Hide notch
+    /Applications/SUMB.app/Contents/MacOS/SUMB -nonotch
+    
+    # Show notch
+    /Applications/SUMB.app/Contents/MacOS/SUMB -notch
+
 
 ### Uninstall SUMB
 
@@ -108,7 +118,7 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 
 In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/extension_attribute_jamf/scheduled-version-date.sh) to display a computer's update deadline.
 
-### For Jamf, schedule a DDM update via the Blueprints menu
+### Example of a blueprint in Jamf
 
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
