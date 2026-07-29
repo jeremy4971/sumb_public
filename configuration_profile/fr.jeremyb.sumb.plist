@@ -4,6 +4,8 @@
 <dict>
 	<key>disableContextMenuActions</key>
 	<false/>
+	<key>hideIconWhenUpToDate</key>
+	<false/>
 	<key>localizedDaySuffix</key>
 	<string>d</string>
 	<key>localizedPopoverTitle</key>

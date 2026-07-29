@@ -17,6 +17,8 @@
 			<integer>1</integer>
 			<key>disableContextMenuActions</key>
 			<true/>
+			<key>hideIconWhenUpToDate</key>
+			<false/>
 			<key>localizedDaySuffix</key>
 			<string>d</string>
 			<key>localizedPopoverTitle</key>
