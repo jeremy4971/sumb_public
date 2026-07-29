@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadDisplayName</key>
+			<string>SUMB</string>
+			<key>PayloadIdentifier</key>
+			<string>fr.jeremyb.sumb.4195D413-D5CC-4052-A25D-324C81C3C9E6</string>
+			<key>PayloadType</key>
+			<string>fr.jeremyb.sumb</string>
+			<key>PayloadUUID</key>
+			<string>4195D413-D5CC-4052-A25D-324C81C3C9E6</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>disableContextMenuActions</key>
+			<true/>
+			<key>localizedDaySuffix</key>
+			<string>d</string>
+			<key>localizedPopoverTitle</key>
+			<string>macOS Update</string>
+			<key>localizedRestartWarning</key>
+			<string>Your device will restart and update once the deadline passes.</string>
+			<key>localizedUpToDateMessage</key>
+			<string>Your Mac is up to date.</string>
+			<key>localizedUpdateNowButton</key>
+			<string>Open Software Update</string>
+			<key>localizedUpdatingMenuBar</key>
+			<string>Preparing update...</string>
+			<key>notificationsEnabled</key>
+			<false/>
+			<key>reminderNotificationBody</key>
+			<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+			<key>reminderNotificationTitle</key>
+			<string>Managed Update</string>
+			<key>reminderThresholdDays</key>
+			<integer>4</integer>
+		</dict>
+		<dict>
+			<key>NotificationSettings</key>
+			<array>
+				<dict>
+					<key>AlertType</key>
+					<integer>2</integer>
+					<key>BundleIdentifier</key>
+					<string>fr.jeremyb.sumb</string>
+					<key>NotificationsEnabled</key>
+					<true/>
+					<key>ShowInNotificationCenter</key>
+					<true/>
+					<key>SoundsEnabled</key>
+					<true/>
+				</dict>
+			</array>
+			<key>PayloadDisplayName</key>
+			<string>Notifications Payload</string>
+			<key>PayloadIdentifier</key>
+			<string>8F743F7C-52C0-46CC-8D7D-59B102495FBF</string>
+			<key>PayloadOrganization</key>
+			<string>YourCompany</string>
+			<key>PayloadType</key>
+			<string>com.apple.notificationsettings</string>
+			<key>PayloadUUID</key>
+			<string>E50EF576-975A-49FD-A780-F261E5ADD98E</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>PayloadDisplayName</key>
+			<string>Managed Login Items</string>
+			<key>PayloadIdentifier</key>
+			<string>5518F5C1-F07F-4968-AA93-80D24808E85E</string>
+			<key>PayloadOrganization</key>
+			<string>YourCompany</string>
+			<key>PayloadType</key>
+			<string>com.apple.servicemanagement</string>
+			<key>PayloadUUID</key>
+			<string>5518F5C1-F07F-4968-AA93-80D24808E85E</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>Rules</key>
+			<array>
+				<dict>
+					<key>RuleType</key>
+					<string>TeamIdentifier</string>
+					<key>RuleValue</key>
+					<string>73MS2PM6D7</string>
+				</dict>
+			</array>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Configuration Profile for SUMB.</string>
+	<key>PayloadDisplayName</key>
+	<string>SUMB Settings</string>
+	<key>PayloadIdentifier</key>
+	<string>fr.jeremyb.sumb.profile</string>
+	<key>PayloadOrganization</key>
+	<string>YourCompany</string>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>3B01F4B0-EC5A-4D9D-8DB1-F949F38DC730</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>
