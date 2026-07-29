@@ -118,7 +118,7 @@ When the menu bar is full, SUMB can get hidden behind the notch. Run the followi
 
 In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/extension_attribute_jamf/scheduled-version-date.sh) to display a computer's update deadline.
 
-### Example of a blueprint in Jamf
+### With Jamf, schedule a DDM update in the Blueprints menu
 
 ![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
 
