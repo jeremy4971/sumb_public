@@ -31,7 +31,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
 ![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization2.png?raw=true)
 
-## Basic use
+## Quick start
 
 Just install the .pkg, no configuration needed. Once a scheduled DDM update is deployed from your MDM, the menu bar icon will display the time remaining.
 
