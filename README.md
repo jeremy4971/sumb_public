@@ -5,7 +5,7 @@ SUMB is a native Swift companion app for scheduled macOS updates via Declarative
 
 Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](https://www.macadmins.org/) for news and share your feedback!
 
-✅ Free. ✅ Apple inspired UI. ✅ Texts customization. ✅ Signed and notarized.
+✅ Easy-to-set-up. ✅ Apple inspired UI. ✅ Texts customization. ✅ No ads or telemetry.
 
 ## Screenshots
 
