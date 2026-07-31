@@ -33,7 +33,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
 ## Quick start
 
-Just install the .pkg, no configuration needed. Once a scheduled DDM update is deployed from your MDM, the menu bar icon will display the time remaining.
+Just [download](https://github.com/jeremy4971/sumb_public/releases) and install the .pkg, no configuration needed. Once a scheduled DDM update is deployed from your MDM, the menu bar icon will display the time remaining.
 
 > Requires macOS 15.0 or later.
 
