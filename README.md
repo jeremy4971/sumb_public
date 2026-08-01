@@ -125,6 +125,14 @@ In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_publi
 ### On SimpleMDM, create a Managed Software Update profile
 ![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png?raw=true)
 
+### Similar projects
+If you are looking for tools based on pop-up reminders, here are several other projects worth checking out :
+
+* [Nudge](https://github.com/macadmins/nudge) : The original gangster. Built in Swift.
+* [Super](https://github.com/Macjutsu/super) : Custom scripts via IBM Notifier.
+* [DDM OS Reminder](https://github.com/dan-snelson/DDM-OS-Reminder) : Custom scripts via swiftDialog.
+
+
 ### Disclaimer
 
 This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. Please note that parts of this codebase contain AI-generated code.
