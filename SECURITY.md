@@ -4,15 +4,12 @@ SUMB installer requires admin privileges to :
 * Install the app in /Applications/
 * Install the LaunchAgent in /Library/LaunchAgents/ (needed to keep the app alive, even if the end-user tries to close it).
 
-SUMB itself : 
-* Does NOT run root commands.
-* Contains AI-generated code.
-
 SUMB constantly reads these two local files :
 * `/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
 * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
 
-In addition, SUMB :
+In addition, SUMB : 
+* Does NOT run root commands.
 * Does NOT ask for an online account.
 * Does NOT require Internet access.
 * Does NOT display ads.
@@ -22,6 +19,7 @@ In addition, SUMB :
 * Does NOT trigger any PPPC prompts : personal files, full disk access, accessibility, screen recording, input monitoring, etc.
 * Does NOT display a donation button.
 * Does NOT display a link to a personal website.
+* Contains AI-generated code.
 
 ## Security practices
 
