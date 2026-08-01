@@ -129,8 +129,8 @@ In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_publi
 If you are looking for similar tools, here are several other projects worth checking out :
 
 * [Nudge](https://github.com/macadmins/nudge) : The original gangster. Built in Swift.
-* [Super](https://github.com/Macjutsu/super) : Custom scripts via IBM Notifier.
-* [DDM OS Reminder](https://github.com/dan-snelson/DDM-OS-Reminder) : Custom scripts via swiftDialog.
+* [Super](https://github.com/Macjutsu/super) : Pop-up reminders via IBM Notifier.
+* [DDM OS Reminder](https://github.com/dan-snelson/DDM-OS-Reminder) : Pop-up reminders via swiftDialog.
 * [SupportApp](https://github.com/root3nl/supportapp) : macOS menu bar app for organizations.
 
 
