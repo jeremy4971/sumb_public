@@ -11,7 +11,7 @@
 	<key>localizedPopoverTitle</key>
 	<string>macOS Update</string>
 	<key>localizedRestartWarning</key>
-	<string>Be aware that your Mac will automatically restart after the deadline.</string>
+	<string>Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)</string>
 	<key>localizedUpToDateMessage</key>
 	<string>Your Mac is up to date.</string>
 	<key>localizedUpdateNowButton</key>

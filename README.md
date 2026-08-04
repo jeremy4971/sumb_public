@@ -58,7 +58,7 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 	<key>localizedPopoverTitle</key>
 	<string>macOS Update</string>
 	<key>localizedRestartWarning</key>
-	<string>Be aware that your Mac will automatically restart after the deadline.</string>
+	<string>Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)</string>
 	<key>localizedUpToDateMessage</key>
 	<string>Your Mac is up to date.</string>
 	<key>localizedUpdateNowButton</key>
@@ -113,6 +113,9 @@ When the menu bar is full, SUMB can get hidden behind the notch. Run the followi
     sudo rm -f "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
     sudo rm -f "/Users/$CURRENT_USER/Library/Preferences/fr.jeremyb.sumb.plist"
     sudo pkgutil --forget "fr.jeremyb.sumb"
+    
+    # Reload preferences
+    killall cfprefsd
 
 ### Extension Attribute
 
