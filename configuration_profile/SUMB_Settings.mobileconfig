@@ -19,6 +19,8 @@
 			<false/>
 			<key>hideIconWhenUpToDate</key>
 			<false/>
+			<key>ignoreAppleUpdateChannel</key>
+			<false/>
 			<key>localizedDaySuffix</key>
 			<string>d</string>
 			<key>localizedPopoverTitle</key>
