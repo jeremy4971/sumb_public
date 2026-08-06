@@ -25,11 +25,11 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
   
 
-![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-general3.png?raw=true)
+![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-general4.png?raw=true)
 
   
 
-![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization2.png?raw=true)
+![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization4.png?raw=true)
 
 ## Quick start
 
@@ -52,6 +52,8 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 	<key>disableContextMenuActions</key>
 	<false/>
 	<key>hideIconWhenUpToDate</key>
+	<false/>
+	<key>ignoreAppleUpdateChannel</key>
 	<false/>
 	<key>localizedDaySuffix</key>
 	<string>d</string>
