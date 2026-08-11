@@ -17,7 +17,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
   
 
-![Past deadline](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-past-deadline.png?raw=true)
+![Past deadline](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-past-deadline2.png?raw=true)
 
   
 
