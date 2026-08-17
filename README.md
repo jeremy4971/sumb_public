@@ -38,9 +38,9 @@ Just [download](https://github.com/jeremy4971/sumb_public/releases) and install 
 > Requires macOS 15.0 or later.
 
 ## Managed Settings with a Configuration Profile
-Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_public/blob/main/configuration_profile/SUMB_Settings.mobileconfig), the [Jamf manifest](https://github.com/jeremy4971/sumb_public/blob/main/jamf_manifest/fr.jeremyb.sumb.json), or manually configure your MDM using the settings below.
+Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_public/blob/main/configuration_profile/SUMB_Settings.mobileconfig) or manually configure your MDM using the settings below.
 
-### Application & Custom Settings : fr.jeremyb.sumb
+### Application & Custom Settings : fr.jeremyb.sumb ([Jamf JSON manifest](https://github.com/jeremy4971/sumb_public/blob/main/jamf_manifest/fr.jeremyb.sumb.json))
 
 ![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png?raw=true)
 
