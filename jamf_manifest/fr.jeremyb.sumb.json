@@ -1,0 +1,148 @@
+{
+    "title": "SUMB - Software Update Menu Bar (fr.jeremyb.sumb)",
+    "description": "Managed settings for SUMB, a companion menu bar app for scheduled macOS updates deployed via blueprints/DDM. Preference domain: fr.jeremyb.sumb. Requires macOS 15.0 or later.",
+    "properties": {
+        "hideIconWhenUpToDate": {
+            "title": "Hide Menu Bar Icon When Up to Date",
+            "description": "Remove the SUMB icon from the menu bar when the Mac is up to date.",
+            "property_order": 10,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: hideIconWhenUpToDate"
+            }
+        },
+        "disableContextMenuActions": {
+            "title": "Disable Context Menu Actions",
+            "description": "Prevent users from accessing the Settings menu.",
+            "property_order": 20,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: disableContextMenuActions"
+            }
+        },
+        "ignoreAppleUpdateChannel": {
+            "title": "Ignore Apple Update Channel",
+            "description": "Ignore updates coming from the standard Apple software update channel and only take managed update declarations (DDM) into account.",
+            "property_order": 30,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: ignoreAppleUpdateChannel"
+            }
+        },
+        "notificationsEnabled": {
+            "title": "Enable Notifications",
+            "description": "Allow SUMB to post reminder notifications about the scheduled macOS update.",
+            "property_order": 40,
+            "type": "boolean",
+            "default": true,
+            "options": {
+                "infoText": "Key name: notificationsEnabled"
+            }
+        },
+        "reminderThresholdDays": {
+            "title": "Reminder Threshold (days)",
+            "description": "Number of days remaining before the update deadline at which SUMB starts sending reminder notifications.",
+            "property_order": 50,
+            "type": "integer",
+            "default": 2,
+            "minimum": 0,
+            "options": {
+                "infoText": "Key name: reminderThresholdDays"
+            }
+        },
+        "reminderIntervalMinutes": {
+            "title": "Reminder Interval (minutes)",
+            "description": "Time in minutes between two reminder notifications.",
+            "property_order": 60,
+            "type": "integer",
+            "default": 120,
+            "minimum": 1,
+            "options": {
+                "infoText": "Key name: reminderIntervalMinutes"
+            }
+        },
+        "reminderNotificationTitle": {
+            "title": "Reminder Notification Title",
+            "description": "Title displayed in the reminder notification.",
+            "property_order": 70,
+            "type": "string",
+            "default": "Managed Update",
+            "options": {
+                "infoText": "Key name: reminderNotificationTitle"
+            }
+        },
+        "reminderNotificationBody": {
+            "title": "Reminder Notification Body",
+            "description": "Body text of the reminder notification. Supports the $VERSION and $DATE variables, which are replaced by the scheduled macOS version and the deadline date.",
+            "property_order": 80,
+            "type": "string",
+            "default": "An update to macOS $VERSION has been scheduled for $DATE.",
+            "options": {
+                "infoText": "Key name: reminderNotificationBody - variables: $VERSION, $DATE"
+            }
+        },
+        "localizedPopoverTitle": {
+            "title": "Popover Title",
+            "description": "Title shown at the top of the popover displayed when the user clicks the menu bar icon.",
+            "property_order": 90,
+            "type": "string",
+            "default": "macOS Update",
+            "options": {
+                "infoText": "Key name: localizedPopoverTitle"
+            }
+        },
+        "localizedRestartWarning": {
+            "title": "Restart Warning",
+            "description": "Warning text shown in the popover about the automatic restart at the deadline. Markdown links are supported, for example: [Learn more...](https://example.com)",
+            "property_order": 100,
+            "type": "string",
+            "default": "Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)",
+            "options": {
+                "infoText": "Key name: localizedRestartWarning"
+            }
+        },
+        "localizedUpdateNowButton": {
+            "title": "Update Now Button Label",
+            "description": "Label of the button that takes the user to Software Update.",
+            "property_order": 110,
+            "type": "string",
+            "default": "Open Software Update",
+            "options": {
+                "infoText": "Key name: localizedUpdateNowButton"
+            }
+        },
+        "localizedUpToDateMessage": {
+            "title": "Up to Date Message",
+            "description": "Message displayed in the popover when the Mac is up to date.",
+            "property_order": 120,
+            "type": "string",
+            "default": "Your Mac is up to date.",
+            "options": {
+                "infoText": "Key name: localizedUpToDateMessage"
+            }
+        },
+        "localizedUpdatingMenuBar": {
+            "title": "Updating Menu Bar Text",
+            "description": "Text shown in the menu bar while the update is being prepared.",
+            "property_order": 130,
+            "type": "string",
+            "default": "Preparing update...",
+            "options": {
+                "infoText": "Key name: localizedUpdatingMenuBar"
+            }
+        },
+        "localizedDaySuffix": {
+            "title": "Day Suffix",
+            "description": "Suffix appended to the number of days remaining in the menu bar countdown. Use \"j\" in French, \"t\" in German, and so on.",
+            "property_order": 140,
+            "type": "string",
+            "default": "d",
+            "options": {
+                "infoText": "Key name: localizedDaySuffix"
+            }
+        }
+    }
+}

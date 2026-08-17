@@ -110,6 +110,11 @@ When the menu bar is full, SUMB can get hidden behind the notch. Run the followi
     # Unload LaunchAgent
     sudo launchctl bootout gui/$USER_ID /Library/LaunchAgents/fr.jeremyb.sumb.plist
     
+    # Kill SUMB if still running
+	if pgrep -x "SUMB"; then
+		killall -9 "SUMB"
+	fi
+    
     # Remove files
     sudo rm -rf "/Applications/SUMB.app"
     sudo rm -f "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
