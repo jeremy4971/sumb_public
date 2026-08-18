@@ -28,11 +28,8 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
   
 
-![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-general5.png)
+![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/settings-x2.png)
 
-  
-
-![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization5.png)
 
 ## Quick start
 
