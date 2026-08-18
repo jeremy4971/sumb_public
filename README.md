@@ -1,11 +1,14 @@
 
-## SUMB (Software Update Menu Bar)
+## SUMB · Software Update Menu Bar
+![GitHub Release](https://img.shields.io/github/v/release/jeremy4971/sumb_public?color=blue) ![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue) ![Github](https://img.shields.io/badge/privacy-no%20ads%20no%20telemetry-blue) ![Github](https://img.shields.io/badge/security-signed%20%20and%20notazired-blue)
+
 
 SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
 
 Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](https://www.macadmins.org/) for support and share your feedback.
 
-✅ Easy-to-set-up. ✅ Apple inspired UI. ✅ Texts customization. ✅ No ads or telemetry.
+
+
 
 ## Screenshots
 
