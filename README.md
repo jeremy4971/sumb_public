@@ -13,23 +13,23 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
   
 
-![Custom notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom-notification-4.png?raw=true)
+![Custom notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom-notification-4.png)
 
   
 
-![Past deadline](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-past-deadline2.png?raw=true)
+![Past deadline](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-past-deadline2.png)
 
   
 
-![Up to date](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-uptodate.png?raw=true)
+![Up to date](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-uptodate.png)
 
   
 
-![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-general5.png?raw=true)
+![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-general5.png)
 
   
 
-![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization5.png?raw=true)
+![Localization options](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/option-localization5.png)
 
 ## Quick start
 
@@ -42,7 +42,7 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 
 ### Application & Custom Settings : fr.jeremyb.sumb · [Jamf JSON manifest](https://github.com/jeremy4971/sumb_public/blob/main/jamf_manifest/fr.jeremyb.sumb.json)
 
-![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png?raw=true)
+![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png)
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -83,13 +83,13 @@ Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_publi
 
 ### Managed Notification : fr.jeremyb.sumb
 
-![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_notification.png?raw=true)
+![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_notification.png)
 
   
 
 ### Managed Login Item (LaunchAgent) : Team ID 73MS2PM6D7
 
-![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png?raw=true)
+![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png)
 
 ### Hide notch (experimental)
 When the menu bar is full, SUMB can get hidden behind the notch. Run the following command to reduce your display resolution and restore the entire menu bar. There is intentionally no managed key for this setting.
@@ -130,10 +130,10 @@ In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_publi
 
 ### With Jamf, schedule a DDM update in the Blueprints menu
 
-![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png?raw=true)
+![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png)
 
 ### On SimpleMDM, create a Managed Software Update profile
-![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png?raw=true)
+![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png)
 
 ### Similar projects
 If you are looking for similar tools, here are several other projects worth checking out :
