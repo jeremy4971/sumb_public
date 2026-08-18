@@ -9,7 +9,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
 ## Screenshots
 
-![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update.png?raw=true)
+![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update.png)
 
   
 
