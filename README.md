@@ -12,7 +12,7 @@ Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](ht
 
 ## Screenshots
 
-![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update.png)
+![5 days left](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-update-mb.png)
 
   
 
@@ -37,105 +37,14 @@ Just [download](https://github.com/jeremy4971/sumb_public/releases) and install 
 
 > Requires macOS 15.0 or later.
 
-## Managed Settings with a Configuration Profile
-Use this pre-configured [.mobileconfig](https://github.com/jeremy4971/sumb_public/blob/main/configuration_profile/SUMB_Settings.mobileconfig), the [JSON manifest for Jamf](https://github.com/jeremy4971/sumb_public/blob/main/jamf_manifest/fr.jeremyb.sumb.json), or manually configure your MDM using the settings below.
+## Documentation
+To learn more about SUMB features, make sure to take a look at the [wiki](https://github.com/jeremy4971/sumb_public/wiki).
 
-### Application & Custom Settings : fr.jeremyb.sumb
-
-![Jamf Custom Settings](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/custom_settings.png)
-
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>disableContextMenuActions</key>
-	<false/>
-	<key>hideIconWhenUpToDate</key>
-	<false/>
-	<key>ignoreAppleUpdateChannel</key>
-	<false/>
-	<key>localizedDaySuffix</key>
-	<string>d</string>
-	<key>localizedPopoverTitle</key>
-	<string>macOS Update</string>
-	<key>localizedRestartWarning</key>
-	<string>Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)</string>
-	<key>localizedUpToDateMessage</key>
-	<string>Your Mac is up to date.</string>
-	<key>localizedUpdateNowButton</key>
-	<string>Open Software Update</string>
-	<key>localizedUpdatingMenuBar</key>
-	<string>Preparing update...</string>
-	<key>notificationsEnabled</key>
-	<true/>
-	<key>reminderIntervalMinutes</key>
-	<integer>120</integer>
-	<key>reminderNotificationBody</key>
-	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
-	<key>reminderNotificationTitle</key>
-	<string>Managed Update</string>
-	<key>reminderThresholdDays</key>
-	<integer>2</integer>
-</dict>
-</plist>
-```
-
-### Managed Notification : fr.jeremyb.sumb
-
-![Jamf Managed Notification](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_notification.png)
-
-  
-
-### Managed Login Item (LaunchAgent) : Team ID 73MS2PM6D7
-
-![Jamf Login Items](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/managed_login_item.png)
-
-### Hide notch (experimental)
-When the menu bar is full, SUMB can get hidden behind the notch. Run the following command to reduce your display resolution and restore the entire menu bar. There is intentionally no managed key for this setting.
-
-    # Hide notch
-    /Applications/SUMB.app/Contents/MacOS/SUMB -nonotch
-    
-    # Show notch
-    /Applications/SUMB.app/Contents/MacOS/SUMB -notch
+* [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki)
+* [Uninstall](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
 
 
-### Uninstall SUMB
-
-    # Read current user
-    CURRENT_USER=$(stat -f %Su /dev/console)
-    USER_ID=$(id -u "$CURRENT_USER")
-    
-    # Unload LaunchAgent
-    sudo launchctl bootout gui/$USER_ID /Library/LaunchAgents/fr.jeremyb.sumb.plist
-    
-    # Kill SUMB if still running
-	if pgrep -x "SUMB"; then
-		killall -9 "SUMB"
-	fi
-    
-    # Remove files
-    sudo rm -rf "/Applications/SUMB.app"
-    sudo rm -f "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
-    sudo rm -f "/Users/$CURRENT_USER/Library/Preferences/fr.jeremyb.sumb.plist"
-    sudo pkgutil --forget "fr.jeremyb.sumb"
-    
-    # Reload preferences
-    killall cfprefsd
-
-### Extension Attribute
-
-In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/extension_attribute_jamf/scheduled-version-date.sh) to display a computer's update deadline.
-
-### With Jamf, schedule a DDM update in the Blueprints menu
-
-![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png)
-
-### On SimpleMDM, create a Managed Software Update profile
-![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png)
-
-### Similar projects
+## Similar projects
 If you are looking for similar tools, here are several other projects worth checking out :
 
 * [Nudge](https://github.com/macadmins/nudge) : The original gangster. Built in Swift.
@@ -144,7 +53,7 @@ If you are looking for similar tools, here are several other projects worth chec
 * [SupportApp](https://github.com/root3nl/supportapp) : macOS menu bar app for organizations.
 
 
-### Disclaimer
+## Disclaimer
 
 This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. Please note that parts of this codebase contain AI-generated code.
 
