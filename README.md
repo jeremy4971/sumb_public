@@ -40,7 +40,7 @@ Just [download](https://github.com/jeremy4971/sumb_public/releases) and install 
 ## Documentation
 To learn more about SUMB features, make sure to take a look at the [wiki](https://github.com/jeremy4971/sumb_public/wiki).
 
-* [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki)
+* [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki#managed-settings-with-a-configuration-profile)
 * [Uninstall Script](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
 * [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Frequently-Asked-Questions)
 
