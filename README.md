@@ -1,6 +1,6 @@
 
 ## SUMB · Software Update Menu Bar
-![GitHub Release](https://img.shields.io/github/v/release/jeremy4971/sumb_public?color=blue) ![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue) ![Github](https://img.shields.io/badge/privacy-no%20ads%20no%20telemetry-blue) ![Github](https://img.shields.io/badge/security-signed%20%20and%20notazired-blue)
+![GitHub Release](https://img.shields.io/github/v/release/jeremy4971/sumb_public?color=blue) ![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue) ![Github](https://img.shields.io/badge/privacy-no%20ads%20no%20telemetry-blue) ![Github](https://img.shields.io/badge/security-signed%20%20and%20notazired-blue) ![Github](https://img.shields.io/badge/semgrep-passed-blue)
 
 
 SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
@@ -41,7 +41,8 @@ Just [download](https://github.com/jeremy4971/sumb_public/releases) and install 
 To learn more about SUMB features, make sure to take a look at the [wiki](https://github.com/jeremy4971/sumb_public/wiki).
 
 * [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki)
-* [Uninstall](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
+* [Uninstall Script](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
+* [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Frequently-Asked-Questions)
 
 
 ## Similar projects
