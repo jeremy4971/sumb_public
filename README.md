@@ -5,9 +5,10 @@
 
 SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
 
+[<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/github-download-button-white.png" width="250" height="81">](https://github.com/jeremy4971/sumb_public/releases)
+
+
 Join [#sumb](https://macadmins.slack.com/archives/C05JSCXQQ5T) on [MacAdmins](https://www.macadmins.org/) for support and share your feedback.
-
-
 
 
 ## Screenshots
