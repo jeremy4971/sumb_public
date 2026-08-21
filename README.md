@@ -51,10 +51,3 @@ If you are looking for similar tools, here are several other projects worth chec
 * [Super](https://github.com/Macjutsu/super) : Pop-up reminders via IBM Notifier.
 * [DDM OS Reminder](https://github.com/dan-snelson/DDM-OS-Reminder) : Pop-up reminders via swiftDialog.
 * [SupportApp](https://github.com/root3nl/supportapp) : macOS menu bar app for organizations.
-
-
-## Disclaimer
-
-This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. Please note that parts of this codebase contain AI-generated code.
-
-In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
