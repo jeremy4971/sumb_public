@@ -1,7 +1,7 @@
-![sumb-banner](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/sumb_banner.png)
+![sumb-banner](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/sumb-banner.png)
 
 ## SUMB · Software Update Menu Bar
-[![Github](https://img.shields.io/badge/status-beta-blue)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/privacy-%20no%20telemetry-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/security-signed%20%20%C2%B7%20notazired-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/semgrep-passed-blue)](https://semgrep.dev/)
+[![Github](https://img.shields.io/badge/status-beta-blue)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/privacy-%20no%20telemetry-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/security-signed%20%20%C2%B7%20notazired%20%20%C2%B7%20sandboxed-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/semgrep-passed-blue)](https://semgrep.dev/)
 
 
 SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
