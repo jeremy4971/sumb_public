@@ -1,4 +1,4 @@
-![sumb-banner](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/sumb-banner.png)
+![sumb-banner](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/sumb_banner.png)
 
 ## SUMB · Software Update Menu Bar
 [![Github](https://img.shields.io/badge/status-beta-blue)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/privacy-%20no%20telemetry-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/security-signed%20%20%C2%B7%20notazired-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/semgrep-passed-blue)](https://semgrep.dev/)
