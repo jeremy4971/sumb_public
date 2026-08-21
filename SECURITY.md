@@ -3,6 +3,7 @@
 * SUMB is sandboxed with 2 read-only exception files :
     * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
     * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
+* There are zero third-party dependencies.
 * The .pkg and the .app are always notarized by Apple and signed with the following developer ID : 73MS2PM6D7.
 * The source code is constantly scanned with Semgrep for vulnerabilities and bad security patterns.
 
