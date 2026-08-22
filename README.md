@@ -41,7 +41,7 @@ To learn more about SUMB features, make sure to take a look at the [wiki](https:
 
 * [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki#managed-settings-with-a-configuration-profile)
 * [Uninstall Script](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
-* [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Frequently-Asked-Questions)
+* [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Miscellaneous#frequently-asked-questions)
 
 
 ## Similar projects
