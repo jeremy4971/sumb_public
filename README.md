@@ -4,7 +4,7 @@
 [![Github](https://img.shields.io/badge/status-beta-blue)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-fully%20customizable-blue)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/privacy-%20no%20telemetry-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/security-signed%20%20%C2%B7%20notazired%20%20%C2%B7%20sandboxed-blue)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-policy) [![Github](https://img.shields.io/badge/semgrep-passed-blue)](https://semgrep.dev/)
 
 
-SUMB is a native Swift companion app for scheduled macOS updates via Declarative Device Management (DDM). By utilizing a live menu bar countdown, it leverages cognitive design, giving users a constant, subtle psychological buffer so they can plan their reboot on their own terms, rather than getting slapped with an aggressive popup while in a flow state or mid-meeting.
+SUMB is a companion app for scheduled macOS updates via Declarative Device Management (DDM). Featuring a live menu bar countdown, it gives end users continuous, subtle visibility so they can plan their reboot on their own terms, avoiding abrupt disruptions during critical tasks or meetings.
 
 [<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/github-download-button-white.png" width="250" height="81">](https://github.com/jeremy4971/sumb_public/releases) [<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/github-macadmins-button-white.png" width="250" height="81">](https://macadmins.slack.com/archives/C05JSCXQQ5T) 
 
@@ -41,7 +41,7 @@ To learn more about SUMB features, make sure to take a look at the [wiki](https:
 
 * [Managed Configuration](https://github.com/jeremy4971/sumb_public/wiki#managed-settings-with-a-configuration-profile)
 * [Uninstall Script](https://github.com/jeremy4971/sumb_public/wiki#uninstall-sumb)
-* [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Frequently-Asked-Questions)
+* [Frequently Asked Questions](https://github.com/jeremy4971/sumb_public/wiki/Miscellaneous#frequently-asked-questions)
 
 
 ## Similar projects
