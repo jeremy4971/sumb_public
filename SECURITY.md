@@ -3,6 +3,7 @@
 * SUMB is sandboxed with 2 read-only exception files :
     * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
     * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
+* Hardened Runtime is enabled 
 * There are zero third-party dependencies.
 * The .pkg and the .app are always notarized by Apple and signed with the following developer ID : 73MS2PM6D7.
 * The source code is constantly scanned with Semgrep for vulnerabilities and bad security patterns.
@@ -20,10 +21,10 @@ In addition, SUMB :
 * Does not run privileged commands.
 * Does not ask for an online account.
 * Does not display ads.
-* Does not collect or send any data.
+* Does not run telemetry or analytics.
 * Does not phone home.
 * Does not have a built-in auto-updater.
-* Does not require any TCC / PPPC permissions.
+* Does not trigger any PPPC prompts : personal files, full disk access, accessibility, screen recording, input monitoring, etc.
 * Does not display a donation button.
 * Does not display a link to a personal website.
 * Contains AI-generated code.
