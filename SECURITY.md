@@ -20,10 +20,10 @@ In addition, SUMB :
 * Does not run privileged commands.
 * Does not ask for an online account.
 * Does not display ads.
-* Does not run telemetry.
+* Does not collect or send any data.
 * Does not phone home.
 * Does not have a built-in auto-updater.
-* Does not trigger any PPPC prompts : personal files, full disk access, accessibility, screen recording, input monitoring, etc.
+* Does not require any TCC / PPPC permissions.
 * Does not display a donation button.
 * Does not display a link to a personal website.
 * Contains AI-generated code.
