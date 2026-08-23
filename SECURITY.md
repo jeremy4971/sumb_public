@@ -1,6 +1,6 @@
 ## Security practices
 
-* SUMB is sandboxed with 2 read-only exception files :
+* SUMB is sandboxed with 2 read-only exception files (entitlements) :
     * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
     * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
 * Hardened Runtime is enabled.
