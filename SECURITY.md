@@ -1,8 +1,6 @@
 ## Security practices
 
-* SUMB is sandboxed with 2 read-only exception files (entitlements) :
-    * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
-    * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
+
 * Hardened Runtime is enabled.
 * There are zero third-party dependencies.
 * The .pkg and the .app are always notarized by Apple and signed with the following developer ID : 73MS2PM6D7.
@@ -12,6 +10,10 @@ If you discover a security vulnerability in this project, please report it priva
 
 
 ## Security disclaimer
+
+SUMB reads these two files :
+* `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
+* `/Library/Preferences/com.apple.SoftwareUpdate.plist`
 
 SUMB installer requires admin privileges to : 
 * Install the app in `/Applications/`
