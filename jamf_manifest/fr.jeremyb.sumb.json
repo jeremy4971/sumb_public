@@ -14,7 +14,7 @@
         },
         "disableContextMenuActions": {
             "title": "Disable Context Menu Actions",
-            "description": "Prevent users from accessing the Settings menu.",
+            "description": "Hide the Settings menu. Holding Option while right-clicking still reveals it, as does relaunching SUMB.app.",
             "property_order": 20,
             "type": "boolean",
             "default": false,
@@ -132,6 +132,16 @@
             "default": "Preparing update...",
             "options": {
                 "infoText": "Key name: localizedUpdatingMenuBar"
+            }
+        },
+        "localizedDayPrefix": {
+            "title": "Day Prefix",
+            "description": "Text placed before the number of days remaining in the menu bar countdown. Combine with an empty Day Suffix to render \"D-X\".",
+            "property_order": 135,
+            "type": "string",
+            "default": "",
+            "options": {
+                "infoText": "Key name: localizedDayPrefix"
             }
         },
         "localizedDaySuffix": {

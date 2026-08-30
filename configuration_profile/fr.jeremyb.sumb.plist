@@ -8,6 +8,8 @@
 	<false/>
 	<key>ignoreAppleUpdateChannel</key>
 	<false/>
+	<key>localizedDayPrefix</key>
+	<string></string>
 	<key>localizedDaySuffix</key>
 	<string>d</string>
 	<key>localizedPopoverTitle</key>
