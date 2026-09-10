@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "macos15-update.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

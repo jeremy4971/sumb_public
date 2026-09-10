@@ -1,0 +1,32 @@
+#!/bin/zsh
+
+# Get the console user (if any)
+CONSOLE_USER=$(stat -f '%Su' /dev/console)
+CONSOLE_UID=$(id -u "$CONSOLE_USER")
+
+# Load is-at-least
+autoload is-at-least
+
+# Read current macOS version
+os_version=$(sw_vers -productVersion)
+
+# Gatekeeper scan. Avoid the verifying dialog on first launch
+if is-at-least 14.0 ${os_version}; then
+	gktool scan "/Applications/SUMB.app"
+fi
+
+# LaunchAgent #
+if [[ "$CONSOLE_USER" != "root" && "$CONSOLE_USER" != "_mbsetupuser" && -n "$CONSOLE_UID" ]]; then
+    # Remove any old instance first
+    launchctl bootout "gui/$CONSOLE_UID" "/Library/LaunchAgents/fr.jeremyb.sumb.plist" 2>/dev/null
+    
+    # Kill SUMB if still running
+	if pgrep -x "SUMB"; then
+		killall -9 "SUMB"
+	fi
+    
+    # Reload LaunchAgent
+    launchctl bootstrap "gui/$CONSOLE_UID" "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
+fi
+
+exit 0

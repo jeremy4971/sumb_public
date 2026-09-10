@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "checkmark-su.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

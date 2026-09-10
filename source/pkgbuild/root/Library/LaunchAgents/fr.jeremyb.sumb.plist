@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>fr.jeremyb.sumb</string>
+	</array>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>fr.jeremyb.sumb</string>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Applications/SUMB.app/Contents/MacOS/SUMB</string>
+	</array>
+	<key>SpawnConstraint</key>
+	<dict>
+		<key>signing-identifier</key>
+		<string>fr.jeremyb.sumb</string>
+		<key>team-identifier</key>
+		<string>73MS2PM6D7</string>
+	</dict>
+</dict>
+</plist>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>disableContextMenuActions</key>
+	<false/>
+	<key>hideIconWhenUpToDate</key>
+	<false/>
+	<key>ignoreAppleUpdateChannel</key>
+	<false/>
+	<key>localizedDayPrefix</key>
+	<string></string>
+	<key>localizedDaySuffix</key>
+	<string>d</string>
+	<key>localizedPopoverTitle</key>
+	<string>macOS Update</string>
+	<key>localizedRestartWarning</key>
+	<string>Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)</string>
+	<key>localizedUpToDateMessage</key>
+	<string>Your Mac is up to date.</string>
+	<key>localizedUpdateNowButton</key>
+	<string>Open Software Update</string>
+	<key>localizedUpdatingMenuBar</key>
+	<string>Preparing update...</string>
+	<key>notificationsEnabled</key>
+	<true/>
+	<key>reminderIntervalMinutes</key>
+	<integer>120</integer>
+	<key>reminderNotificationBody</key>
+	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+	<key>reminderNotificationTitle</key>
+	<string>Managed Update</string>
+	<key>reminderThresholdDays</key>
+	<integer>2</integer>
+</dict>
+</plist>

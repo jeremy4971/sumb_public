@@ -1,0 +1,19 @@
+# Xcode build output
+build/
+DerivedData/
+source/pkgbuild/root/Applications/SUMB.app
+*.pkg
+
+# Xcode user-specific state
+xcuserdata/
+
+# Local notes
+memory.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
