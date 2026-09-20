@@ -49,15 +49,35 @@ struct GeneralOptionsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Hide settings", isOn: $monitor.disableContextMenuActions)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.disableContextMenuActions))
+                    Text("Option-right-clicking the menu bar icon will reveal the settings menu.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section {
-                Toggle("Enable notification", isOn: $monitor.notificationsEnabled)
-                    .disabled(monitor.isManaged(UpdateMonitor.Keys.notificationsEnabled))
-
-                LabeledContent("Remind starting") {
+                LabeledContent("Enable notification") {
                     HStack {
+                        Button("Settings") { openNotificationSettings() }
+                        // Nested in an HStack, the Form no longer restyles it,
+                        // so it falls back to a checkbox without this.
+                        Toggle("", isOn: $monitor.notificationsEnabled)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .disabled(monitor.isManaged(UpdateMonitor.Keys.notificationsEnabled))
+                    }
+                }
+
+                // macOS 27 leaves room for an empty label, hence labelsHidden().
+                // Baseline alignment keeps the unit level with the number.
+                LabeledContent("Remind starting") {
+                    HStack(alignment: .firstTextBaseline) {
                         TextField("", value: $monitor.reminderThresholdDays, format: .number)
+                            .labelsHidden()
                             .frame(width: 50)
                         Text("days before update")
                     }
@@ -66,13 +86,24 @@ struct GeneralOptionsView: View {
                 .opacity(monitor.notificationsEnabled ? 1 : 0.4)
 
                 LabeledContent("Every") {
-                    HStack {
+                    HStack(alignment: .firstTextBaseline) {
                         TextField("", value: $monitor.reminderIntervalMinutes, format: .number)
+                            .labelsHidden()
                             .frame(width: 50)
                         Text("minutes")
                     }
                 }
                 .disabled(!monitor.notificationsEnabled || monitor.isManaged(UpdateMonitor.Keys.reminderIntervalMinutes))
+                .opacity(monitor.notificationsEnabled ? 1 : 0.4)
+
+                Picker("Sound", selection: $monitor.notificationSound) {
+                    Text("Default").tag("")
+                    Divider()
+                    ForEach(UpdateMonitor.availableSystemSounds, id: \.self) { file in
+                        Text((file as NSString).deletingPathExtension).tag(file)
+                    }
+                }
+                .disabled(!monitor.notificationsEnabled || monitor.isManaged(UpdateMonitor.Keys.notificationSound))
                 .opacity(monitor.notificationsEnabled ? 1 : 0.4)
             }
 
@@ -95,21 +126,36 @@ struct GeneralOptionsView: View {
 
                 LabeledContent("Target OS version") {
                     TextField("", text: $monitor.demoOSVersion)
+                        .labelsHidden()
                         .frame(width: 100)
                 }
                 .disabled(!monitor.demoMode || monitor.isManaged(UpdateMonitor.Keys.demoOSVersion))
                 .opacity(monitor.demoMode ? 1 : 0.4)
 
-                Button("Send Test Notification") {
-                    monitor.postReminderNotification()
+                HStack {
+                    // Both work with demo mode off too.
+                    Button("Copy settings to clipboard") {
+                        guard let xml = monitor.settingsPropertyListXML() else { return }
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(xml, forType: .string)
+                    }
+
+                    Button("Send Test Notification") {
+                        monitor.postReminderNotification()
+                    }
                 }
-                .disabled(!monitor.demoMode)
-                .opacity(monitor.demoMode ? 1 : 0.4)
             }
         }
         .formStyle(.grouped)
     }
 
+    // Opens the Notifications pane with SUMB already selected. The id query
+    // takes the app's bundle identifier.
+    private func openNotificationSettings() {
+        let identifier = Bundle.main.bundleIdentifier ?? "fr.jeremyb.sumb"
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(identifier)") else { return }
+        NSWorkspace.shared.open(url)
+    }
 }
 
 struct LocalizationOptionsView: View {
@@ -154,14 +200,17 @@ struct LocalizationOptionsView: View {
                 TextField("Updating text", text: $monitor.localizedUpdatingMenuBar)
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.localizedUpdatingMenuBar))
 
+                // Same labelsHidden() fix as on the General tab.
                 LabeledContent("Day prefix") {
                     TextField("", text: $monitor.localizedDayPrefix)
+                        .labelsHidden()
                         .frame(width: 50)
                 }
                 .disabled(monitor.isManaged(UpdateMonitor.Keys.localizedDayPrefix))
 
                 LabeledContent("Day suffix") {
                     TextField("", text: $monitor.localizedDaySuffix)
+                        .labelsHidden()
                         .frame(width: 50)
                 }
                 .disabled(monitor.isManaged(UpdateMonitor.Keys.localizedDaySuffix))
@@ -170,10 +219,8 @@ struct LocalizationOptionsView: View {
         .formStyle(.grouped)
     }
 
-    // Not LabeledContent. Whether it renders side-by-side or stacked is an
-    // adaptive heuristic that changed between macOS versions — the same build
-    // was full-width on one Mac and clipped on another. A VStack row in a Form
-    // is full-width everywhere.
+    // Not LabeledContent: whether it renders side-by-side or stacked varies by
+    // macOS version. A VStack row in a Form is full-width everywhere.
     @ViewBuilder
     private func multilineField(_ label: String, text: Binding<String>,
                                 lines: Int, caption: String) -> some View {
@@ -206,8 +253,7 @@ struct LocalizationOptionsView: View {
 
     private static let editorPadding: CGFloat = 4
 
-    // Measured from the real font metrics instead of a fixed point value, so it
-    // still fits if the system text size changes.
+    // Measured from the font metrics so it still fits if the text size changes.
     private static func editorHeight(lines: Int) -> CGFloat {
         let font = NSFont.preferredFont(forTextStyle: .body)
         let lineHeight = NSLayoutManager().defaultLineHeight(for: font)

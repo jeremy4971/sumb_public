@@ -8,7 +8,8 @@ source/pkgbuild/root/Applications/SUMB.app
 xcuserdata/
 
 # Local notes
-memory.md
+MEMORY.md
+CLAUDE.md
 
 # macOS
 .DS_Store

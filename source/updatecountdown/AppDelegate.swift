@@ -3,7 +3,7 @@
 //  updatecountdown
 //
 //  Runs the NSStatusItem (icon + countdown title). Both menus are plain
-//  NSMenus — the dropdown is a custom NSMenuItem view hosting SwiftUI — so
+//  NSMenus (the dropdown is a custom NSMenuItem view hosting SwiftUI), so
 //  they attach flush under the status item with no gap or animation.
 //
 
@@ -12,7 +12,7 @@ import SwiftUI
 import Combine
 import UserNotifications
 
-final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, NSMenuItemValidation {
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, NSMenuItemValidation, NSWindowDelegate {
 
     let monitor = UpdateMonitor()
 
@@ -29,20 +29,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private static let notificationReopenGrace: TimeInterval = 0.5
 
-    // Relaunching SUMB.app while it's already running is what makes "Launch
-    // SUMB.app to re-open settings" work when the status item is hidden.
-    //
-    // It's deferred because clicking a notification's body also foregrounds the
-    // app and lands here as a reopen, which would pop Settings up next to the
-    // Software Update pane. The didReceive callback cancels this timer;
-    // suppressReopenUntil covers the case where it arrives first instead.
+    // SUMB lives in the menu bar; closing Options is not quitting.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    // Relaunching SUMB.app re-opens settings when the status item is hidden.
+    // Deferred because a notification click also lands here as a reopen.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         guard Date() >= suppressReopenUntil else { return true }
 
         pendingOptionsWindowTimer?.invalidate()
         pendingOptionsWindowTimer = Timer.scheduledTimer(
             withTimeInterval: Self.notificationReopenGrace, repeats: false
-        ) { _ in
+        ) { [weak self] _ in
             Task { @MainActor [weak self] in self?.showOptionsWindow() }
         }
         return true
@@ -89,8 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
-        // Registered once at launch, and again only if the button label is
-        // edited — never on the notification-post cadence.
+        // Registered once at launch, and again only if the button label is edited.
         monitor.$localizedUpdateNowButton
             .receive(on: RunLoop.main)
             .sink { title in
@@ -116,9 +115,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             .sink { [weak self] _ in self?.wasWithinReminderWindow = true }
             .store(in: &cancellables)
 
-        // `status` needs removeDuplicates: recomputeDisplay() reassigns it on
-        // every display tick even while still .scheduled, which would restart
-        // the repeating timer before it ever fires twice.
+        // removeDuplicates on `status`: recomputeDisplay() reassigns it on every
+        // display tick, which would restart the timer before it ever fires.
         Publishers.Merge5(
             monitor.$targetDate.map { _ in () },
             monitor.$reminderThresholdDays.map { _ in () },
@@ -130,9 +128,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         .sink { [weak self] _ in self?.updateReminderScheduling() }
         .store(in: &cancellables)
 
-        // Once per crossing. removeDuplicates for the same reason as above, and
-        // the flag resets when status leaves .expired so a later crossing can
-        // fire again.
+        // Once per crossing. The flag resets when status leaves .expired so a
+        // later crossing can fire again.
         monitor.$status
             .removeDuplicates()
             .receive(on: RunLoop.main)
@@ -240,14 +237,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private func showContextMenu() {
         let menu = NSMenu()
 
-        // Read at click time instead of tracking a flags-changed monitor: the
-        // menu is rebuilt on every click anyway, and menu tracking swallows the
-        // key events such a monitor needs.
+        // Read at click time: the menu is rebuilt on every click, and menu
+        // tracking swallows the events a flags-changed monitor would need.
         let optionHeld = NSEvent.modifierFlags.contains(.option)
 
-        // MDM lockdown hides "Settings…" rather than disabling it. Option brings
-        // it back — this keeps the window out of an end user's way, it's not a
-        // barrier for a technician at the machine.
+        // "Hide settings" hides the item rather than disabling it. Option brings
+        // it back, so a technician can still get in.
         if !monitor.disableContextMenuActions || optionHeld {
             menu.addItem(withTitle: "Settings…", action: #selector(showOptionsWindow), keyEquivalent: "")
         }
@@ -263,6 +258,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 )
                 item.representedObject = plist.path
             }
+
+            // hideNotch can't be locked by a profile, so this ignores the lockdown too.
+            menu.addItem(withTitle: "Toggle Notch", action: #selector(toggleNotch), keyEquivalent: "")
         }
 
         // Under lockdown with Option up the menu is just "Quit", and a leading
@@ -281,13 +279,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         statusItem?.menu = nil
     }
 
-    // Greys out a reveal item whose file isn't there. The DDM plist only exists
-    // once an update has been scheduled, and Finder silently does nothing when
-    // asked to select a missing path.
+    // Greys out a reveal item whose file is missing (the DDM plist only exists
+    // once an update is scheduled), and Toggle Notch on a Mac without a notch.
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        guard menuItem.action == #selector(revealPlistInFinder(_:)),
-              let path = menuItem.representedObject as? String else { return true }
-        return FileManager.default.fileExists(atPath: path)
+        switch menuItem.action {
+        case #selector(toggleNotch):
+            return NotchDisplay.hasNotch()
+        case #selector(revealPlistInFinder(_:)):
+            guard let path = menuItem.representedObject as? String else { return true }
+            return FileManager.default.fileExists(atPath: path)
+        default:
+            return true
+        }
     }
 
     // activateFileViewerSelecting resolves /var → /private/var itself, so the
@@ -295,6 +298,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     @objc private func revealPlistInFinder(_ sender: NSMenuItem) {
         guard let path = sender.representedObject as? String else { return }
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    // Flip the setting, not the display, so the Settings toggle stays in sync.
+    @objc private func toggleNotch() {
+        monitor.hideNotch.toggle()
     }
 
     @objc private func quitApp() {
@@ -306,8 +314,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Measured, not computed: SwiftUI's reported fitting size for the
     // Localization tab's Grid wasn't reliable.
     private static let optionsWindowWidth: CGFloat = 440
-    private static let generalTabHeight: CGFloat = 560
-    private static let localizationTabHeight: CGFloat = 711
+    private static let generalTabHeight: CGFloat = 641
+    private static let localizationTabHeight: CGFloat = 700
     private static let aboutTabHeight: CGFloat = 260
 
     @objc private func showOptionsWindow() {
@@ -348,15 +356,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             tabViewController.tabViewItems = [generalItem, localizationItem, aboutItem]
 
             window.contentViewController = tabViewController
-            // Set explicitly — tabView(_:didSelect:) may not fire for the
+            // Set explicitly since tabView(_:didSelect:) may not fire for the
             // initial selection.
             window.title = generalItem.label
             window.center()
+            window.delegate = self
             optionsWindow = window
         }
 
-        optionsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Regular app while Options is open, so macOS doesn't hand the front to
+        // another app when a system pane closes.
+        NSApp.setActivationPolicy(.regular)
+
+        // Activate first, or the window stays behind the frontmost app.
+        NSApp.activate()
+        if let window = optionsWindow {
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            window.makeKeyAndOrderFront(nil)
+            // In case activation lags behind.
+            window.orderFrontRegardless()
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard (notification.object as? NSWindow) === optionsWindow else { return }
+        // Deferred: demoting while the window is still on screen leaves the
+        // menu bar and the Dock icon behind for a frame.
+        Task { @MainActor in NSApp.setActivationPolicy(.accessory) }
     }
 
     private static func makeHostingController(rootView: some View, height: CGFloat) -> NSHostingController<some View> {
@@ -376,9 +402,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         reminderTimer?.invalidate()
         reminderTimer = nil
 
-        // .scheduled already rules out "no update" and "current OS already
-        // satisfies the target" — both of those fold into .none — so this guard
-        // alone stops reminders once the Mac is up to date.
+        // .scheduled already rules out "no update" and an OS that meets the
+        // target, so this guard alone stops reminders once up to date.
         guard monitor.notificationsEnabled, monitor.status == .scheduled, let target = monitor.targetDate else {
             wasWithinReminderWindow = false
             return
@@ -397,7 +422,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             wasWithinReminderWindow = true
 
             let interval = TimeInterval(max(1, monitor.reminderIntervalMinutes) * 60)
-            reminderTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            reminderTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.monitor.postReminderNotification() }
             }
 
@@ -407,7 +432,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         } else {
             wasWithinReminderWindow = false
             let delay = remaining - windowStart
-            reminderTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+            reminderTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.updateReminderScheduling() }
             }
         }
@@ -425,8 +450,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }
 
     // Tapping the action button or the notification itself opens the Software
-    // Update pane, and only that — never the Settings window. Dismissing does
-    // nothing.
+    // Update pane, never the Settings window. Dismissing does nothing.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,

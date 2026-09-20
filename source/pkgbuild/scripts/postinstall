@@ -28,5 +28,3 @@ if [[ "$CONSOLE_USER" != "root" && "$CONSOLE_USER" != "_mbsetupuser" && -n "$CON
     # Reload LaunchAgent
     launchctl bootstrap "gui/$CONSOLE_UID" "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
 fi
-
-exit 0

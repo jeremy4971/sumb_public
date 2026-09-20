@@ -13,8 +13,7 @@ struct updatecountdownApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     // -notch / -nonotch let a sysadmin set the notch preference from a script.
-    // They apply and exit before the menu bar starts up. This only seeds the
-    // initial value; it doesn't lock the checkbox in Options.
+    // Seeds the initial value only, it doesn't lock the checkbox in Options.
     init() {
         switch CommandLine.arguments.dropFirst().first {
         case "-nonotch":
@@ -46,6 +45,11 @@ struct updatecountdownApp: App {
         // No visible windows; the app lives entirely in the menu bar.
         Settings {
             EmptyView()
+        }
+        // The empty Settings scene only exists because an App needs one. Keep
+        // it out of the menu bar.
+        .commands {
+            CommandGroup(replacing: .appSettings) { }
         }
     }
 }

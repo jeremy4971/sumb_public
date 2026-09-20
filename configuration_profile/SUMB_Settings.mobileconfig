@@ -35,6 +35,8 @@
 			<string>Open Software Update</string>
 			<key>localizedUpdatingMenuBar</key>
 			<string>Preparing update...</string>
+			<key>notificationSound</key>
+			<string></string>
 			<key>notificationsEnabled</key>
 			<false/>
 			<key>reminderIntervalMinutes</key>

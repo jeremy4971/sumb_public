@@ -12,13 +12,10 @@ import Darwin
 
 private typealias CGDisplayModeGetIOFlagsFn = @convention(c) (CGDisplayMode) -> UInt32
 
-// CoreGraphics exports this but declares it in no public header. Looked up at
-// runtime instead of via @_silgen_name: a link-time dependency on a private
-// symbol would turn its removal into a launch failure, and there's no recovering
-// from that under the Hardened Runtime. If it's missing, resolve() just falls
-// through to its next heuristic.
+// CoreGraphics exports this but declares it in no public header, so look it up
+// at runtime. resolve() falls back to a heuristic if it's missing.
 private let cgDisplayModeGetIOFlags: CGDisplayModeGetIOFlagsFn? = {
-    // RTLD_DEFAULT — search every image already loaded into the process.
+    // RTLD_DEFAULT searches every image already loaded into the process.
     guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2),
                              "CGDisplayModeGetIOFlags") else { return nil }
     return unsafeBitCast(symbol, to: CGDisplayModeGetIOFlagsFn.self)
@@ -248,9 +245,8 @@ enum NotchDisplay {
         return !sameResolution(resolved.current, resolved.defaultMode)
     }
 
-    /// Switches to the no-notch resolution, or back to the default. No-ops if
-    /// already in that state, if this Mac has no notch, or if the target mode
-    /// can't be worked out. Returns whether the requested state is in effect.
+    /// Switches to the no-notch resolution, or back to the default. Returns
+    /// whether the requested state is in effect.
     @discardableResult
     static func setHidden(_ hidden: Bool) -> Bool {
         guard hasNotch(), let resolved = resolve() else { return false }

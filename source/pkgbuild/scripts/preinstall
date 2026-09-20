@@ -14,5 +14,3 @@ if [[ "$CONSOLE_USER" != "root" && "$CONSOLE_USER" != "_mbsetupuser" && -n "$CON
 		killall -9 "SUMB"
 	fi
 fi
-
-exit 0

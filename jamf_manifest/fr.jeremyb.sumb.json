@@ -42,6 +42,18 @@
                 "infoText": "Key name: notificationsEnabled"
             }
         },
+        "notificationSound": {
+            "title": "Notification Sound",
+            "description": "Sound played with the reminder notification. Only files located in /System/Library/Sounds are supported.",
+            "property_order": 45,
+            "type": "string",
+            "default": "",
+            "enum": ["", "Basso.aiff", "Blow.aiff", "Bottle.aiff", "Frog.aiff", "Funk.aiff", "Glass.aiff", "Hero.aiff", "Morse.aiff", "Ping.aiff", "Pop.aiff", "Purr.aiff", "Sosumi.aiff", "Submarine.aiff", "Tink.aiff"],
+            "options": {
+                "enum_titles": ["Default", "Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink"],
+                "infoText": "Key name: notificationSound - a file name from /System/Library/Sounds"
+            }
+        },
         "reminderThresholdDays": {
             "title": "Reminder Threshold (days)",
             "description": "Number of days remaining before the update deadline at which SUMB starts sending reminder notifications.",

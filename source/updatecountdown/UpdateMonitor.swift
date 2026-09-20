@@ -37,6 +37,7 @@ final class UpdateMonitor: ObservableObject {
         static let reminderIntervalMinutes = "reminderIntervalMinutes"
         static let reminderNotificationTitle = "reminderNotificationTitle"
         static let reminderNotificationBody = "reminderNotificationBody"
+        static let notificationSound = "notificationSound"
         static let localizedPopoverTitle = "localizedPopoverTitle"
         static let localizedUpdateNowButton = "localizedUpdateNowButton"
         static let localizedRestartWarning = "localizedRestartWarning"
@@ -44,15 +45,15 @@ final class UpdateMonitor: ObservableObject {
         static let localizedUpdatingMenuBar = "localizedUpdatingMenuBar"
         static let localizedDayPrefix = "localizedDayPrefix"
         static let localizedDaySuffix = "localizedDaySuffix"
-        // MDM-only, no control in the Options GUI.
+        // Backs the "Hide settings" toggle. A profile can lock it.
         static let disableContextMenuActions = "disableContextMenuActions"
 
-        // Note that hideNotch is missing on purpose — see the property below.
+        // hideNotch is missing on purpose, see the property below.
         static let all: [String] = [
             demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate,
             ignoreAppleUpdateChannel,
             notificationsEnabled, reminderThresholdDays, reminderIntervalMinutes,
-            reminderNotificationTitle, reminderNotificationBody,
+            reminderNotificationTitle, reminderNotificationBody, notificationSound,
             localizedPopoverTitle, localizedUpdateNowButton, localizedRestartWarning,
             localizedUpToDateMessage, localizedUpdatingMenuBar,
             localizedDayPrefix, localizedDaySuffix,
@@ -119,8 +120,7 @@ final class UpdateMonitor: ObservableObject {
     }
 
     // Experimental, and only meaningful on notched Macs. Kept out of Keys.all so
-    // a profile can never lock it — the user should always be able to toggle
-    // this. An admin can still seed the initial value with -notch / -nonotch.
+    // a profile can never lock it.
     @Published var hideNotch: Bool {
         didSet { UserDefaults.standard.set(hideNotch, forKey: Keys.hideNotch) }
     }
@@ -156,6 +156,12 @@ final class UpdateMonitor: ObservableObject {
 
     @Published var reminderNotificationBody: String {
         didSet { UserDefaults.standard.set(reminderNotificationBody, forKey: Keys.reminderNotificationBody) }
+    }
+
+    /// A file name from /System/Library/Sounds, e.g. "Glass.aiff". Empty means
+    /// the system default sound.
+    @Published var notificationSound: String {
+        didSet { UserDefaults.standard.set(notificationSound, forKey: Keys.notificationSound) }
     }
 
     // MARK: - Localization
@@ -210,8 +216,7 @@ final class UpdateMonitor: ObservableObject {
     private var managedPreferencesChangeDebounceTimer: Timer?
 
     // UserDefaults.standard already returns a profile's forced value over the
-    // user's own, so this reads correctly either way. Used at init() and again
-    // after a managed-preferences change.
+    // user's own, so this reads correctly either way.
     private struct LoadedSettings {
         let demoMode: Bool
         let demoDate: Date
@@ -224,6 +229,7 @@ final class UpdateMonitor: ObservableObject {
         let reminderIntervalMinutes: Int
         let reminderNotificationTitle: String
         let reminderNotificationBody: String
+        let notificationSound: String
         let localizedPopoverTitle: String
         let localizedUpdateNowButton: String
         let localizedRestartWarning: String
@@ -252,6 +258,7 @@ final class UpdateMonitor: ObservableObject {
             reminderNotificationTitle: (defaults.string(forKey: Keys.reminderNotificationTitle)) ?? "Managed Update",
             reminderNotificationBody: (defaults.string(forKey: Keys.reminderNotificationBody))
                 ?? "An update to macOS $VERSION has been scheduled for $DATE.",
+            notificationSound: (defaults.string(forKey: Keys.notificationSound)) ?? "",
             localizedPopoverTitle: (defaults.string(forKey: Keys.localizedPopoverTitle))
                 ?? "macOS Update",
             localizedUpdateNowButton: (defaults.string(forKey: Keys.localizedUpdateNowButton))
@@ -280,6 +287,7 @@ final class UpdateMonitor: ObservableObject {
         reminderIntervalMinutes = loaded.reminderIntervalMinutes
         reminderNotificationTitle = loaded.reminderNotificationTitle
         reminderNotificationBody = loaded.reminderNotificationBody
+        notificationSound = loaded.notificationSound
         localizedPopoverTitle = loaded.localizedPopoverTitle
         localizedUpdateNowButton = loaded.localizedUpdateNowButton
         localizedRestartWarning = loaded.localizedRestartWarning
@@ -288,6 +296,33 @@ final class UpdateMonitor: ObservableObject {
         localizedDayPrefix = loaded.localizedDayPrefix
         localizedDaySuffix = loaded.localizedDaySuffix
         disableContextMenuActions = loaded.disableContextMenuActions
+    }
+
+    // Same format as configuration_profile/fr.jeremyb.sumb.plist. Demo keys
+    // and hideNotch stay out: they're per-machine.
+    func settingsPropertyListXML() -> String? {
+        let settings: [String: Any] = [
+            Keys.disableContextMenuActions: disableContextMenuActions,
+            Keys.hideIconWhenUpToDate: hideIconWhenUpToDate,
+            Keys.ignoreAppleUpdateChannel: ignoreAppleUpdateChannel,
+            Keys.localizedDayPrefix: localizedDayPrefix,
+            Keys.localizedDaySuffix: localizedDaySuffix,
+            Keys.localizedPopoverTitle: localizedPopoverTitle,
+            Keys.localizedRestartWarning: localizedRestartWarning,
+            Keys.localizedUpToDateMessage: localizedUpToDateMessage,
+            Keys.localizedUpdateNowButton: localizedUpdateNowButton,
+            Keys.localizedUpdatingMenuBar: localizedUpdatingMenuBar,
+            Keys.notificationSound: notificationSound,
+            Keys.notificationsEnabled: notificationsEnabled,
+            Keys.reminderIntervalMinutes: reminderIntervalMinutes,
+            Keys.reminderNotificationBody: reminderNotificationBody,
+            Keys.reminderNotificationTitle: reminderNotificationTitle,
+            Keys.reminderThresholdDays: reminderThresholdDays,
+        ]
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: settings, format: .xml, options: 0) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
     }
 
     init() {
@@ -305,6 +340,7 @@ final class UpdateMonitor: ObservableObject {
         reminderIntervalMinutes = loaded.reminderIntervalMinutes
         reminderNotificationTitle = loaded.reminderNotificationTitle
         reminderNotificationBody = loaded.reminderNotificationBody
+        notificationSound = loaded.notificationSound
         localizedPopoverTitle = loaded.localizedPopoverTitle
         localizedUpdateNowButton = loaded.localizedUpdateNowButton
         localizedRestartWarning = loaded.localizedRestartWarning
@@ -368,10 +404,10 @@ final class UpdateMonitor: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = reminderNotificationTitle
         content.body = expandedNotificationBody()
-        // Most prominent level we can ask for, but the user's per-app style in
-        // System Settings still wins — only "Alerts" stays up until dismissed.
+        // Most prominent level we can ask for. The user's per-app style in
+        // System Settings still wins.
         content.interruptionLevel = .timeSensitive
-        content.sound = .default
+        content.sound = notificationSoundForContent()
         content.categoryIdentifier = Self.reminderCategoryIdentifier
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
@@ -386,12 +422,26 @@ final class UpdateMonitor: ObservableObject {
         content.title = reminderNotificationTitle
         content.body = localizedUpdatingMenuBar
         content.interruptionLevel = .timeSensitive
-        content.sound = .default
+        content.sound = notificationSoundForContent()
         content.categoryIdentifier = Self.reminderCategoryIdentifier
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }
+
+    // Just a name, no path. macOS searches the sound folders itself, so system
+    // sounds work without shipping them.
+    private func notificationSoundForContent() -> UNNotificationSound {
+        guard !notificationSound.isEmpty else { return .default }
+        return UNNotificationSound(named: UNNotificationSoundName(notificationSound))
+    }
+
+    // Read from disk rather than hard-coded, since the list can change between
+    // macOS releases.
+    static let availableSystemSounds: [String] = {
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: "/System/Library/Sounds")) ?? []
+        return files.filter { $0.hasSuffix(".aiff") }.sorted()
+    }()
 
     // Fills in $DATE and $VERSION so the date and target version don't have to
     // be hard-coded into the localized text.
@@ -409,8 +459,7 @@ final class UpdateMonitor: ObservableObject {
     // MARK: - Managed preferences (MDM)
 
     // Which of Keys.all a profile currently forces. Cached because
-    // CFPreferencesAppValueIsForced is a cross-process lookup, far too slow to
-    // call per field on every render — but fine on the odd profile change.
+    // CFPreferencesAppValueIsForced is a slow cross-process lookup.
     @Published private(set) var managedKeys: Set<String> = []
 
     private static func computeManagedKeys() -> Set<String> {
@@ -419,7 +468,7 @@ final class UpdateMonitor: ObservableObject {
     }
 
     // CFPreferencesAppSynchronize flushes our cached copy so the re-read picks
-    // up what changed underneath us. Without it we'd have to quit to notice.
+    // up what changed underneath us.
     private func reloadManagedPreferences() {
         if let bundleID = Bundle.main.bundleIdentifier {
             CFPreferencesAppSynchronize(bundleID as CFString)
@@ -428,9 +477,7 @@ final class UpdateMonitor: ObservableObject {
         applySettings(Self.loadSettingsFromDefaults())
     }
 
-    /// Whether a profile forces `key`. Reading already works without this —
-    /// UserDefaults returns the managed value on its own — so the only thing
-    /// this buys us is knowing when to grey out a control.
+    /// Whether a profile forces `key`. Used to grey out a control.
     func isManaged(_ key: String) -> Bool {
         managedKeys.contains(key)
     }
@@ -440,10 +487,11 @@ final class UpdateMonitor: ObservableObject {
         !managedKeys.isEmpty
     }
 
-    /// Set by a profile to hide "Settings…" from the right-click menu. "Quit" is
-    /// unaffected, Option-right-click brings it back, and relaunching SUMB.app
-    /// opens the window anyway — it's about discoverability, not lockout.
-    @Published private(set) var disableContextMenuActions: Bool
+    /// Hides "Settings…" from the right-click menu. Option-right-click or
+    /// relaunching the app still gets you there.
+    @Published var disableContextMenuActions: Bool {
+        didSet { UserDefaults.standard.set(disableContextMenuActions, forKey: Keys.disableContextMenuActions) }
+    }
 
     // A profile can be scoped to one user or to the whole system, and the two
     // land in different places, so watch both.
@@ -467,7 +515,7 @@ final class UpdateMonitor: ObservableObject {
     private func watchManagedPreferencesPlist(at path: String) {
         let fd = open(path, O_EVTONLY)
         guard fd >= 0 else {
-            // No profile at this scope yet — watch the directory instead.
+            // No profile at this scope yet, watch the directory instead.
             watchManagedPreferencesDirectoryForCreation(of: path)
             return
         }
@@ -494,15 +542,13 @@ final class UpdateMonitor: ObservableObject {
     // one reload 5s after the last one.
     private func scheduleManagedPreferencesChanged() {
         managedPreferencesChangeDebounceTimer?.invalidate()
-        managedPreferencesChangeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { _ in
+        managedPreferencesChangeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in self?.reloadManagedPreferences() }
         }
     }
 
     // For when the plist doesn't exist yet: watch the parent directory so we
-    // notice a profile being installed. Every managed app on the Mac shares that
-    // directory, so most events are unrelated — a cheap fileExists is better
-    // than rebuilding the watcher each time.
+    // notice a profile being installed. Most events there are unrelated.
     private func watchManagedPreferencesDirectoryForCreation(of path: String) {
         let directory = (path as NSString).deletingLastPathComponent
         let fd = open(directory, O_EVTONLY)
@@ -530,17 +576,15 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Plist watching
 
-    // Re-arms on every event. The file is usually replaced by an atomic
-    // delete+recreate rather than written in place, so the old descriptor goes
-    // deaf; re-opening keeps us on whatever now lives at that path. reload()
-    // falls back cleanly to "nothing scheduled" if the file is gone.
+    // Re-arms on every event. The file is replaced rather than written in
+    // place, so the old descriptor goes deaf.
     private func startWatchingPlist() {
         fileWatchSource?.cancel()
         fileWatchSource = nil
 
         let fd = open(Self.plistPath, O_EVTONLY)
         guard fd >= 0 else {
-            // Doesn't exist yet — watch the directory instead.
+            // Doesn't exist yet, watch the directory instead.
             watchDirectoryForPlistCreation()
             return
         }
@@ -686,7 +730,7 @@ final class UpdateMonitor: ObservableObject {
         displayTimer?.invalidate()
         let remaining = targetDate?.timeIntervalSinceNow ?? -1
         let interval: TimeInterval = (remaining > 0 && remaining <= Self.urgentThreshold) ? 1 : 60
-        displayTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+        displayTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in self?.recomputeDisplay() }
         }
     }
@@ -711,9 +755,7 @@ final class UpdateMonitor: ObservableObject {
 
     static func formattedDateTime(_ date: Date) -> String {
         // Locale.autoupdatingCurrent is clamped to the languages this app
-        // declares (English only), so it ignores the system language.
-        // preferredLanguages isn't, and reading it fresh means a language change
-        // applies immediately.
+        // declares, so it ignores the system language. preferredLanguages isn't.
         let locale = Locale.preferredLanguages.first.map(Locale.init(identifier:)) ?? .autoupdatingCurrent
         dateOnlyFormatter.locale = locale
         timeOnlyFormatter.locale = locale
@@ -759,18 +801,26 @@ final class UpdateMonitor: ObservableObject {
         }
 
         // Collected by key name from anywhere in the plist, because the real
-        // structure is nested under SUCorePersistedStatePolicyFields →
-        // Declarations → <dynamic key>.
+        // structure is nested several levels down under dynamic keys.
         var candidates: [ScheduledUpdate] = []
         collectTargets(from: root, into: &candidates)
 
-        // Soonest upcoming, or soonest overall if they're all in the past.
+        // A target the running OS already meets can't apply anymore, so it
+        // shouldn't win over one that still does.
+        let current = currentOSVersionString()
+        candidates.removeAll { candidate in
+            guard let version = candidate.osVersion else { return false }
+            return compareVersions(current, version) >= 0
+        }
+
+        // Soonest upcoming. If they're all past, take the latest one: that's
+        // the deadline that just expired, not some old leftover.
         let now = Date()
         let upcoming = candidates.filter { $0.date >= now }.sorted { $0.date < $1.date }
         if let next = upcoming.first {
             return next
         }
-        return candidates.sorted { $0.date < $1.date }.first
+        return candidates.max { $0.date < $1.date }
     }
 
     private static func collectTargets(from object: Any, into result: inout [ScheduledUpdate]) {
@@ -780,7 +830,9 @@ final class UpdateMonitor: ObservableObject {
                 let version = dict["TargetOSVersion"] as? String
                 result.append(ScheduledUpdate(date: date, osVersion: version))
             }
-            for value in dict.values {
+            // softwareupdated keeps rejected declarations around under this
+            // key. They're never enforced, so skip them.
+            for (key, value) in dict where key != "invalidDeclarations" {
                 collectTargets(from: value, into: &result)
             }
         } else if let array = object as? [Any] {

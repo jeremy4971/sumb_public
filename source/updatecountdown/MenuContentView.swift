@@ -96,8 +96,7 @@ struct MenuContentView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        // 280 is the compact "up to date" width. Longer dates or custom MDM
-        // strings grow the popover rather than getting truncated.
+        // 280 fits the compact "up to date" layout. Longer content grows it.
         .frame(minWidth: 280, alignment: .leading)
     }
 
@@ -113,9 +112,8 @@ struct MenuContentView: View {
         )) ?? AttributedString(wrapped)
     }
 
-    // Greedy word wrap. A whole [text](url) counts as one unbreakable token so
-    // we never split inside link syntax, and it's measured by its visible label
-    // length so a long URL doesn't push it onto its own line.
+    // Greedy word wrap. A whole [text](url) counts as one token, measured by
+    // its visible label length.
     private static func wordWrapped(_ text: String, maxLineLength: Int) -> String {
         var words: [(token: Substring, weight: Int)] = []
         var i = text.startIndex
