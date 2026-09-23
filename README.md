@@ -24,7 +24,7 @@ SUMB is a companion app for scheduled macOS updates via Declarative Device Manag
 
 
 ### Install script
-    curl -fsSL https://raw.githubusercontent.com/jeremy4971/sumb_public/2635e7391d2f954407d796b5cae60cba89a612f2/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/jeremy4971/sumb_public/HEAD/install.sh | bash
 
 
 ### Manual download
