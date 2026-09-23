@@ -8,8 +8,6 @@ TEAM_ID="73MS2PM6D7"
 echo "Fetching the latest release info for $REPO..."
 
 # Query the GitHub API for the latest stable release, and extract the browser_download_url for the .pkg file
-# /releases/latest skips pre-releases and drafts, so only stable builds are installed
-# The version number right after "SUMB-" keeps other packages (e.g. the uninstaller) from matching
 DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | \
     grep -Eo '"browser_download_url": *"[^"]+SUMB-[0-9][^"]*\.pkg"' | \
     head -n 1 | \
@@ -54,4 +52,4 @@ echo "Signature OK: signed by Developer ID $TEAM_ID"
 echo "Installing $PKG_NAME..."
 sudo installer -pkg "$PKG_PATH" -target /
 
-echo "SUMB has been successfully installed!"
+echo "SUMB has been successfully installed."
