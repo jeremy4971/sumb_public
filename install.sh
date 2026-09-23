@@ -7,15 +7,16 @@ TEAM_ID="73MS2PM6D7"
 
 echo "Fetching the latest release info for $REPO..."
 
-# Query the GitHub API for releases, and extract the browser_download_url for the .pkg file
-# Use the general /releases endpoint rather than /releases/latest in case the target is marked as a "pre-release"
-DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases" | \
-    grep -Eo '"browser_download_url": *"[^"]+SUMB-[^"]*\.pkg"' | \
+# Query the GitHub API for the latest stable release, and extract the browser_download_url for the .pkg file
+# /releases/latest skips pre-releases and drafts, so only stable builds are installed
+# The version number right after "SUMB-" keeps other packages (e.g. the uninstaller) from matching
+DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | \
+    grep -Eo '"browser_download_url": *"[^"]+SUMB-[0-9][^"]*\.pkg"' | \
     head -n 1 | \
     awk -F'"' '{print $4}')
 
 if [ -z "$DOWNLOAD_URL" ]; then
-  echo "Error: Could not find a .pkg file in the recent releases."
+  echo "Error: Could not find a SUMB .pkg file in the latest stable release."
   echo "Please check the repository or your internet connection."
   exit 1
 fi
