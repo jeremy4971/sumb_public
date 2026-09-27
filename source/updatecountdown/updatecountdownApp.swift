@@ -2,8 +2,8 @@
 //  updatecountdownApp.swift
 //  updatecountdown
 //
-//  The menu bar item lives in AppDelegate, as an AppKit NSStatusItem, so the
-//  countdown can be drawn next to the icon.
+//  The app's starting point. Reads the launch options, then hands everything
+//  over to the menu bar icon.
 //
 
 import SwiftUI

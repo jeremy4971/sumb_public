@@ -2,7 +2,13 @@
   "images" : [
     {
       "filename" : "checkmark-su.png",
-      "idiom" : "universal"
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "checkmark-su@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
     }
   ],
   "info" : {

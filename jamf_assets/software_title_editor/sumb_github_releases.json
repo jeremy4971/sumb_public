@@ -1,0 +1,461 @@
+{
+  "name": "SUMB",
+  "publisher": "Jeremy B.",
+  "appName": "SUMB.app",
+  "bundleId": "fr.jeremyb.sumb",
+  "lastModified": "2026-09-27T09:00:00Z",
+  "currentVersion": "1.2.0",
+  "id": "SUMB",
+  "requirements": [
+    {
+      "and": true,
+      "name": "Application Bundle ID",
+      "operator": "is",
+      "value": "fr.jeremyb.sumb",
+      "type": "recon"
+    }
+  ],
+  "patches": [
+    {
+      "version": "1.2.0",
+      "releaseDate": "2026-09-23T08:58:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.2.0",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.2.0",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.1.1",
+      "releaseDate": "2026-09-20T20:51:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.1.1",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.1.1",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.1.0",
+      "releaseDate": "2026-09-11T08:34:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.1.0",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.1.0",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.8",
+      "releaseDate": "2026-08-30T21:22:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.8",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.8",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.7",
+      "releaseDate": "2026-08-21T10:27:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.7",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.7",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.6",
+      "releaseDate": "2026-08-17T16:39:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.6",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.6",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.5",
+      "releaseDate": "2026-08-16T19:28:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.5",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.5",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.4",
+      "releaseDate": "2026-08-10T18:07:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.4",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.4",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.3",
+      "releaseDate": "2026-08-06T13:47:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.3",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.3",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.2",
+      "releaseDate": "2026-08-04T20:20:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.2",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.2",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
+    {
+      "version": "1.0.1",
+      "releaseDate": "2026-07-30T07:30:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.0.1",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.0.1",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    }
+  ],
+  "extensionAttributes": []
+}

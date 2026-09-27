@@ -1,0 +1,24 @@
+#!/bin/zsh
+
+# Read current user
+CURRENT_USER=$(/usr/bin/stat -f %Su /dev/console)
+USER_ID=$(/usr/bin/id -u "$CURRENT_USER")
+
+# Unload LaunchAgent
+/bin/launchctl bootout gui/$USER_ID /Library/LaunchAgents/fr.jeremyb.sumb.plist
+
+# Kill SUMB if still running
+if /usr/bin/pgrep -x "SUMB"; then
+	/usr/bin/killall -9 "SUMB"
+fi
+
+# Remove files
+/bin/rm -rf "/Applications/SUMB.app"
+/bin/rm -f "/Library/LaunchAgents/fr.jeremyb.sumb.plist"
+/bin/rm -f "/Users/$CURRENT_USER/Library/Preferences/fr.jeremyb.sumb.plist"
+/usr/sbin/pkgutil --forget "fr.jeremyb.sumb"
+
+# Reload preferences
+/usr/bin/killall cfprefsd
+
+exit 0

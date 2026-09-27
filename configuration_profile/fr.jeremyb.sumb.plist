@@ -4,6 +4,8 @@
 <dict>
 	<key>disableContextMenuActions</key>
 	<false/>
+	<key>dotBlinkingDays</key>
+	<integer>0</integer>
 	<key>hideIconWhenUpToDate</key>
 	<false/>
 	<key>ignoreAppleUpdateChannel</key>

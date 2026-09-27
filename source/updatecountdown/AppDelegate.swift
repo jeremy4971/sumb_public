@@ -2,9 +2,8 @@
 //  AppDelegate.swift
 //  updatecountdown
 //
-//  Runs the NSStatusItem (icon + countdown title). Both menus are plain
-//  NSMenus (the dropdown is a custom NSMenuItem view hosting SwiftUI), so
-//  they attach flush under the status item with no gap or animation.
+//  The menu bar icon and its countdown, the click and right-click menus,
+//  the Settings window and the reminder notifications.
 //
 
 import Cocoa
@@ -17,11 +16,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     let monitor = UpdateMonitor()
 
     private var statusItem: NSStatusItem?
+
+    private var mainMenu: NSMenu?
+    private var mainMenuHostingView: NSHostingView<MenuContentView>?
+    private lazy var contextMenu = NSMenu()
+
     private var optionsWindow: NSWindow?
     private var reminderTimer: Timer?
     private var wasWithinReminderWindow = false
     private var didSendExpiredNotification = false
     private var pendingOptionsWindowTimer: Timer?
+    private var blinkTimer: Timer?
+    private var halfSecondBlinkTimer: Timer?
+    private var isBadgeDotVisible = true
     private var suppressReopenUntil: Date = .distantPast
     private var cancellables = Set<AnyCancellable>()
 
@@ -148,53 +155,148 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     // MARK: - Status item rendering
 
+    // Built once so the SF Symbol isn't parsed on every tick. Colors still
+    // resolve against the current appearance when AppKit draws them.
+    private static let baseSymbolConfig = NSImage.SymbolConfiguration(textStyle: .body, scale: .large)
+
+    // Black or white at 85%, so the gear feels a bit translucent.
+    private static let gearOpacity: CGFloat = 0.85
+
+    private static let solidGearColor = makeGearColor(alpha: 1)
+    private static let gearColor = makeGearColor(alpha: gearOpacity)
+
+    private static func makeGearColor(alpha: CGFloat) -> NSColor {
+        NSColor(name: nil) { appearance in
+            let white: CGFloat = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? 1 : 0
+            return NSColor(white: white, alpha: alpha)
+        }
+    }
+
+    private static let badgedStatusImage: NSImage? = {
+        // Two colorable layers: gear and badge dot. isTemplate has to be false
+        // or the palette colors are thrown away.
+        let config = baseSymbolConfig.applying(
+            NSImage.SymbolConfiguration(paletteColors: [.systemRed, gearColor])
+        )
+        let image = NSImage(systemSymbolName: "gear.badge", accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        image?.isTemplate = false
+        return image
+    }()
+
+    // Blink "off" frame. Plain "gear" drawn at the bottom of a canvas the size
+    // of gear.badge (1pt taller), so the gear doesn't shift when it swaps.
+    private static let badgeDotHiddenStatusImage: NSImage? = {
+        guard let badged = badgedStatusImage,
+              let gear = NSImage(systemSymbolName: "gear", accessibilityDescription: nil)?
+                .withSymbolConfiguration(baseSymbolConfig.applying(
+                    NSImage.SymbolConfiguration(paletteColors: [solidGearColor])
+                ))
+        else { return nil }
+
+        // "gear" applies a see-through palette color twice (72% instead of 85%),
+        // so it's drawn solid and faded here instead.
+        let image = NSImage(size: badged.size, flipped: false) { _ in
+            gear.draw(in: NSRect(origin: .zero, size: gear.size), from: .zero,
+                      operation: .sourceOver, fraction: gearOpacity)
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }()
+
+    private static let upToDateStatusImage: NSImage? = {
+        // Template image: monochrome, matches the menu bar.
+        let image = NSImage(systemSymbolName: "gear.badge.checkmark", accessibilityDescription: nil)?
+            .withSymbolConfiguration(baseSymbolConfig)
+        image?.isTemplate = true
+        return image
+    }()
+
     private func refreshStatusItem() {
         guard let button = statusItem?.button else { return }
 
-        let baseConfig = NSImage.SymbolConfiguration(textStyle: .body, scale: .large)
-
-        let symbolName: String
         var showsRedBadge = false
         switch monitor.status {
         case .scheduled:
-            symbolName = "gear.badge"
             button.title = monitor.countdownText.map { " \($0)" } ?? ""
             showsRedBadge = true
         case .expired:
             // Deadline passed but macOS hasn't updated yet.
-            symbolName = "gear.badge"
             button.title = " \(monitor.localizedUpdatingMenuBar)"
             showsRedBadge = true
         case .none where monitor.recommendedOSVersion != nil:
             // No MDM deadline, but a newer macOS version is available.
-            symbolName = "gear.badge"
             button.title = ""
             showsRedBadge = true
         case .none:
-            symbolName = "gear.badge.checkmark"
             button.title = ""
         }
 
-        let image: NSImage?
-        if showsRedBadge {
-            // Two colorable layers: gear and badge dot. isTemplate has to be
-            // false or the palette colors are thrown away.
-            let paletteConfig = baseConfig.applying(
-                NSImage.SymbolConfiguration(paletteColors: [.systemRed, .labelColor])
-            )
-            image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
-                .withSymbolConfiguration(paletteConfig)
-            image?.isTemplate = false
-        } else {
-            // Template image: monochrome, matches the menu bar.
-            image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
-                .withSymbolConfiguration(baseConfig)
-            image?.isTemplate = true
-        }
-        button.image = image
+        updateBadgeBlinking(showsRedBadge && shouldBlinkDot)
+        button.image = showsRedBadge ? currentBadgedImage : Self.upToDateStatusImage
 
         let isUpToDate = monitor.status == .none && monitor.recommendedOSVersion == nil
         statusItem?.isVisible = !(monitor.hideIconWhenUpToDate && isUpToDate)
+    }
+
+    // Also blinks once the deadline has passed, but not for a newer version with
+    // no deadline since there's nothing to count down to.
+    private var shouldBlinkDot: Bool {
+        let days = monitor.dotBlinkingDays
+        guard days > 0 else { return false }
+        if monitor.status == .expired { return true }
+        guard monitor.status == .scheduled, let target = monitor.targetDate else { return false }
+        return target.timeIntervalSinceNow <= TimeInterval(days) * 24 * 60 * 60
+    }
+
+    private var currentBadgedImage: NSImage? {
+        isBadgeDotVisible ? Self.badgedStatusImage : Self.badgeDotHiddenStatusImage
+    }
+
+    // Blinks the red dot, 0.5 s on and 0.5 s off.
+    private func updateBadgeBlinking(_ active: Bool) {
+        halfSecondBlinkTimer?.invalidate()
+        halfSecondBlinkTimer = nil
+
+        guard active else {
+            stopBlinkTimer()
+            isBadgeDotVisible = true
+            return
+        }
+
+        // Live HH:mm:ss: dot on for the first half of each second, off for the rest,
+        // timed against the digit on screen.
+        if let seconds = monitor.countdownSeconds, let target = monitor.targetDate {
+            stopBlinkTimer()
+            let intoSecond = target.timeIntervalSinceNow - Double(seconds)
+            isBadgeDotVisible = intoSecond >= 0.5
+            if isBadgeDotVisible {
+                let timer = Timer.scheduledTimer(withTimeInterval: intoSecond - 0.5 + 0.01, repeats: false) { [weak self] _ in
+                    Task { @MainActor [weak self] in self?.refreshStatusItem() }
+                }
+                timer.tolerance = 0
+                halfSecondBlinkTimer = timer
+            }
+            return
+        }
+
+        guard blinkTimer == nil else { return }
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.isBadgeDotVisible.toggle()
+                self.statusItem?.button?.image = self.currentBadgedImage
+            }
+        }
+        timer.tolerance = 0.05
+        blinkTimer = timer
+    }
+
+    private func stopBlinkTimer() {
+        blinkTimer?.invalidate()
+        blinkTimer = nil
     }
 
     // MARK: - Status item click handling
@@ -210,19 +312,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // MARK: - Main dropdown
 
     private func showMainMenu() {
-        let menu = NSMenu()
-        let item = NSMenuItem()
+        let menu = mainMenu ?? makeMainMenu()
 
-        let hostingView = NSHostingView(rootView: MenuContentView(monitor: monitor, onUpdateNow: { [weak menu] in
-            menu?.cancelTracking()
-        }))
-        hostingView.frame = NSRect(origin: .zero, size: hostingView.fittingSize)
-        item.view = hostingView
-        menu.addItem(item)
+        // Re-measured on every open since the content changes shape between states.
+        // Zeroing the frame first stops the old width acting as a minimum.
+        if let hostingView = mainMenuHostingView {
+            hostingView.frame = .zero
+            hostingView.frame = NSRect(origin: .zero, size: hostingView.fittingSize)
+        }
 
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
+    }
+
+    private func makeMainMenu() -> NSMenu {
+        let menu = NSMenu()
+        let item = NSMenuItem()
+
+        // MenuContentView tracks `monitor` itself, so the cached view stays
+        // current without being rebuilt.
+        let hostingView = NSHostingView(rootView: MenuContentView(monitor: monitor, onUpdateNow: { [weak self] in
+            self?.mainMenu?.cancelTracking()
+        }))
+        item.view = hostingView
+        menu.addItem(item)
+
+        mainMenu = menu
+        mainMenuHostingView = hostingView
+        return menu
     }
 
     // MARK: - Context menu
@@ -235,7 +353,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     ]
 
     private func showContextMenu() {
-        let menu = NSMenu()
+        // Same NSMenu every time, but items are rebuilt since they depend on
+        // the Option key and the lockdown setting.
+        let menu = contextMenu
+        menu.removeAllItems()
 
         // Read at click time: the menu is rebuilt on every click, and menu
         // tracking swallows the events a flags-changed monitor would need.
@@ -314,9 +435,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Measured, not computed: SwiftUI's reported fitting size for the
     // Localization tab's Grid wasn't reliable.
     private static let optionsWindowWidth: CGFloat = 440
-    private static let generalTabHeight: CGFloat = 641
+    private static let generalTabHeight: CGFloat = 696
     private static let localizationTabHeight: CGFloat = 700
     private static let aboutTabHeight: CGFloat = 260
+
+    // Saved as "NSWindow Frame SUMBSettingsWindow" in defaults.
+    private static let optionsWindowAutosaveName = "SUMBSettingsWindow"
 
     @objc private func showOptionsWindow() {
         if optionsWindow == nil {
@@ -351,15 +475,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             aboutItem.label = "About"
             aboutItem.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: nil)
 
+            // Read before adding the tabs, selecting the first one saves index 0.
+            let savedIndex = UserDefaults.standard.integer(forKey: OptionsTabViewController.selectedTabKey)
+
             let tabViewController = OptionsTabViewController()
             tabViewController.tabStyle = .toolbar
             tabViewController.tabViewItems = [generalItem, localizationItem, aboutItem]
+            // Reopen on the last tab, as the HIG suggests for settings windows.
+            if tabViewController.tabViewItems.indices.contains(savedIndex) {
+                tabViewController.selectedTabViewItemIndex = savedIndex
+            }
 
             window.contentViewController = tabViewController
             // Set explicitly since tabView(_:didSelect:) may not fire for the
             // initial selection.
-            window.title = generalItem.label
+            let selectedItem = tabViewController.tabViewItems[tabViewController.selectedTabViewItemIndex]
+            window.title = selectedItem.label
+
+            // Centered on first open, then wherever it was last left.
+            // force is needed because the window isn't resizable.
             window.center()
+            if window.setFrameUsingName(Self.optionsWindowAutosaveName, force: true),
+               let size = selectedItem.viewController?.preferredContentSize {
+                // Keep the saved spot but use the current tab height.
+                let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
+                window.setContentSize(size)
+                window.setFrameTopLeftPoint(topLeft)
+            }
+            window.setFrameAutosaveName(Self.optionsWindowAutosaveName)
             window.delegate = self
             optionsWindow = window
         }
@@ -382,7 +525,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard (notification.object as? NSWindow) === optionsWindow else { return }
         // Deferred: demoting while the window is still on screen leaves the
         // menu bar and the Dock icon behind for a frame.
-        Task { @MainActor in NSApp.setActivationPolicy(.accessory) }
+        Task { @MainActor [weak self] in
+            NSApp.setActivationPolicy(.accessory)
+
+            // Free the autosave name so the next window can take it.
+            self?.optionsWindow?.setFrameAutosaveName("")
+            self?.optionsWindow?.delegate = nil
+            self?.optionsWindow?.contentViewController = nil
+            self?.optionsWindow = nil
+        }
     }
 
     private static func makeHostingController(rootView: some View, height: CGFloat) -> NSHostingController<some View> {
@@ -472,8 +623,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
 // Keeps the Options window title in sync with the selected tab.
 final class OptionsTabViewController: NSTabViewController {
+    static let selectedTabKey = "optionsSelectedTab"
+
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         super.tabView(tabView, didSelect: tabViewItem)
         view.window?.title = tabViewItem?.label ?? ""
+        UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.selectedTabKey)
     }
 }

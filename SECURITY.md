@@ -6,7 +6,7 @@
 * The .pkg and the .app are notarized by Apple and signed with the following developer ID : `73MS2PM6D7`
 * The source code is scanned with Semgrep and Claude Fable to detect vulnerabilities and bad security patterns.
 
-If you discover a security vulnerability in this project, please report it privately to **security |at| jeremyb |dot| fr**. You should receive an acknowledgment within 48 hours.
+If you discover a security vulnerability in this project, please report it privately to **security |at| jeremyb |dot| fr**. You should receive an acknowledgment within 72 hours. Please note that only the most recent release is supported by the author.
 
 
 ## Security disclaimer

@@ -22,6 +22,17 @@
                 "infoText": "Key name: disableContextMenuActions"
             }
         },
+        "dotBlinkingDays": {
+            "title": "Dot Blinking (days)",
+            "description": "Number of days before the update deadline at which the red dot on the menu bar icon starts blinking. 0 turns blinking off.",
+            "property_order": 25,
+            "type": "integer",
+            "default": 0,
+            "minimum": 0,
+            "options": {
+                "infoText": "Key name: dotBlinkingDays"
+            }
+        },
         "ignoreAppleUpdateChannel": {
             "title": "Ignore Apple Update Channel",
             "description": "Ignore updates coming from the standard Apple software update channel and only take managed update declarations (DDM) into account.",
@@ -78,22 +89,22 @@
         },
         "reminderNotificationTitle": {
             "title": "Reminder Notification Title",
-            "description": "Title displayed in the reminder notification.",
+            "description": "Title displayed in the reminder notification. Supports the same $VERSION, $DATE and $COUNTDOWN variables as the body.",
             "property_order": 70,
             "type": "string",
             "default": "Managed Update",
             "options": {
-                "infoText": "Key name: reminderNotificationTitle"
+                "infoText": "Key name: reminderNotificationTitle - variables: $VERSION, $DATE, $COUNTDOWN"
             }
         },
         "reminderNotificationBody": {
             "title": "Reminder Notification Body",
-            "description": "Body text of the reminder notification. Supports the $VERSION and $DATE variables, which are replaced by the scheduled macOS version and the deadline date.",
+            "description": "Body text of the reminder notification. Supports the $VERSION, $DATE and $COUNTDOWN variables, which are replaced by the scheduled macOS version, the deadline date and the number of days left before the deadline.",
             "property_order": 80,
             "type": "string",
             "default": "An update to macOS $VERSION has been scheduled for $DATE.",
             "options": {
-                "infoText": "Key name: reminderNotificationBody - variables: $VERSION, $DATE"
+                "infoText": "Key name: reminderNotificationBody - variables: $VERSION, $DATE, $COUNTDOWN"
             }
         },
         "localizedPopoverTitle": {

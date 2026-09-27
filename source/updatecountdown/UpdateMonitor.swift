@@ -2,8 +2,8 @@
 //  UpdateMonitor.swift
 //  updatecountdown
 //
-//  Watches /var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist for a
-//  scheduled macOS update and exposes a countdown for the menu bar.
+//  Finds the macOS update scheduled by the organization and works out the
+//  countdown. Also holds the app settings and sends the reminders.
 //
 
 import Foundation
@@ -30,6 +30,7 @@ final class UpdateMonitor: ObservableObject {
         static let demoDate = "demoDate"
         static let demoOSVersion = "demoOSVersion"
         static let hideIconWhenUpToDate = "hideIconWhenUpToDate"
+        static let dotBlinkingDays = "dotBlinkingDays"
         static let hideNotch = "hideNotch"
         static let ignoreAppleUpdateChannel = "ignoreAppleUpdateChannel"
         static let notificationsEnabled = "notificationsEnabled"
@@ -50,7 +51,7 @@ final class UpdateMonitor: ObservableObject {
 
         // hideNotch is missing on purpose, see the property below.
         static let all: [String] = [
-            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate,
+            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate, dotBlinkingDays,
             ignoreAppleUpdateChannel,
             notificationsEnabled, reminderThresholdDays, reminderIntervalMinutes,
             reminderNotificationTitle, reminderNotificationBody, notificationSound,
@@ -70,6 +71,10 @@ final class UpdateMonitor: ObservableObject {
 
     /// Text drawn to the right of the SF Symbol (nil = symbol only).
     @Published private(set) var countdownText: String?
+
+    /// Seconds left while the live HH:mm:ss countdown shows, nil otherwise.
+    /// Set together with countdownText, so it's always in step with it.
+    private(set) var countdownSeconds: Int?
 
     @Published private(set) var targetDate: Date?
     @Published private(set) var targetOSVersion: String?
@@ -117,6 +122,11 @@ final class UpdateMonitor: ObservableObject {
 
     @Published var hideIconWhenUpToDate: Bool {
         didSet { UserDefaults.standard.set(hideIconWhenUpToDate, forKey: Keys.hideIconWhenUpToDate) }
+    }
+
+    /// Days before the deadline when the red badge dot starts blinking. 0 means never.
+    @Published var dotBlinkingDays: Int {
+        didSet { UserDefaults.standard.set(dotBlinkingDays, forKey: Keys.dotBlinkingDays) }
     }
 
     // Experimental, and only meaningful on notched Macs. Kept out of Keys.all so
@@ -222,6 +232,7 @@ final class UpdateMonitor: ObservableObject {
         let demoDate: Date
         let demoOSVersion: String
         let hideIconWhenUpToDate: Bool
+        let dotBlinkingDays: Int
         let hideNotch: Bool
         let ignoreAppleUpdateChannel: Bool
         let notificationsEnabled: Bool
@@ -250,6 +261,7 @@ final class UpdateMonitor: ObservableObject {
             demoOSVersion: (defaults.string(forKey: Keys.demoOSVersion))
                 ?? "27.9.0",
             hideIconWhenUpToDate: (defaults.object(forKey: Keys.hideIconWhenUpToDate) as? Bool) ?? false,
+            dotBlinkingDays: (defaults.object(forKey: Keys.dotBlinkingDays) as? Int) ?? 0,
             hideNotch: (defaults.object(forKey: Keys.hideNotch) as? Bool) ?? NotchDisplay.isHidden(),
             ignoreAppleUpdateChannel: (defaults.object(forKey: Keys.ignoreAppleUpdateChannel) as? Bool) ?? false,
             notificationsEnabled: (defaults.object(forKey: Keys.notificationsEnabled) as? Bool) ?? false,
@@ -280,6 +292,7 @@ final class UpdateMonitor: ObservableObject {
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
+        dotBlinkingDays = loaded.dotBlinkingDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
         notificationsEnabled = loaded.notificationsEnabled
@@ -303,6 +316,7 @@ final class UpdateMonitor: ObservableObject {
     func settingsPropertyListXML() -> String? {
         let settings: [String: Any] = [
             Keys.disableContextMenuActions: disableContextMenuActions,
+            Keys.dotBlinkingDays: dotBlinkingDays,
             Keys.hideIconWhenUpToDate: hideIconWhenUpToDate,
             Keys.ignoreAppleUpdateChannel: ignoreAppleUpdateChannel,
             Keys.localizedDayPrefix: localizedDayPrefix,
@@ -333,6 +347,7 @@ final class UpdateMonitor: ObservableObject {
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
+        dotBlinkingDays = loaded.dotBlinkingDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
         notificationsEnabled = loaded.notificationsEnabled
@@ -402,8 +417,8 @@ final class UpdateMonitor: ObservableObject {
         guard !reminderNotificationBody.isEmpty else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = reminderNotificationTitle
-        content.body = expandedNotificationBody()
+        content.title = expandingVariables(in: reminderNotificationTitle)
+        content.body = expandingVariables(in: reminderNotificationBody)
         // Most prominent level we can ask for. The user's per-app style in
         // System Settings still wins.
         content.interruptionLevel = .timeSensitive
@@ -419,7 +434,7 @@ final class UpdateMonitor: ObservableObject {
         guard !localizedUpdatingMenuBar.isEmpty else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = reminderNotificationTitle
+        content.title = expandingVariables(in: reminderNotificationTitle)
         content.body = localizedUpdatingMenuBar
         content.interruptionLevel = .timeSensitive
         content.sound = notificationSoundForContent()
@@ -443,17 +458,31 @@ final class UpdateMonitor: ObservableObject {
         return files.filter { $0.hasSuffix(".aiff") }.sorted()
     }()
 
-    // Fills in $DATE and $VERSION so the date and target version don't have to
-    // be hard-coded into the localized text.
-    private func expandedNotificationBody() -> String {
-        var body = reminderNotificationBody
+    // Fills in $DATE, $COUNTDOWN and $VERSION in the notification title and
+    // body so they don't have to be hard-coded into the localized text.
+    private func expandingVariables(in text: String) -> String {
+        var text = text
         if let target = targetDate {
-            body = body.replacingOccurrences(of: "$DATE", with: Self.formattedDateTime(target))
+            text = text.replacingOccurrences(of: "$DATE", with: Self.formattedDateTime(target))
+            text = text.replacingOccurrences(of: "$COUNTDOWN", with: Self.notificationCountdown(until: target))
         }
         if let version = targetOSVersion {
-            body = body.replacingOccurrences(of: "$VERSION", with: version)
+            text = text.replacingOccurrences(of: "$VERSION", with: version)
         }
-        return body
+        return text
+    }
+
+    // Days left, rounded up like the menu bar. In the last 24h it becomes a
+    // decimal rounded down (0.9, 0.8...), never below 0.1 until the deadline.
+    private static func notificationCountdown(until target: Date) -> String {
+        let remaining = target.timeIntervalSinceNow
+        guard remaining > 0 else { return "0" }
+        if remaining > urgentThreshold {
+            return String(Int(ceil(remaining / (24 * 60 * 60))))
+        }
+        // 8640s is a tenth of a day.
+        let days = Double(min(9, max(1, Int(remaining / 8640)))) / 10
+        return days.formatted(.number.precision(.fractionLength(1)).locale(preferredLocale))
     }
 
     // MARK: - Managed preferences (MDM)
@@ -525,8 +554,12 @@ final class UpdateMonitor: ObservableObject {
             eventMask: [.write, .delete, .rename, .extend],
             queue: .main
         )
-        source.setEventHandler { [weak self] in
+        // Drop the old source before re-arming, or each event leaves one behind.
+        source.setEventHandler { [weak self, weak source] in
             Task { @MainActor in
+                guard let source, !source.isCancelled else { return }
+                source.cancel()
+                self?.managedPreferencesWatchSources.removeAll { $0 === source }
                 self?.scheduleManagedPreferencesChanged()
                 self?.watchManagedPreferencesPlist(at: path)
             }
@@ -558,10 +591,10 @@ final class UpdateMonitor: ObservableObject {
         source.setEventHandler { [weak self, weak source] in
             guard FileManager.default.fileExists(atPath: path) else { return }
             Task { @MainActor in
-                if let source {
-                    source.cancel()
-                    self?.managedPreferencesWatchSources.removeAll { $0 === source }
-                }
+                // Several events can queue up during an install. Only the first re-arms.
+                guard let source, !source.isCancelled else { return }
+                source.cancel()
+                self?.managedPreferencesWatchSources.removeAll { $0 === source }
                 // A fresh install counts as a change like any edit does.
                 self?.scheduleManagedPreferencesChanged()
                 self?.watchManagedPreferencesPlist(at: path)
@@ -684,10 +717,10 @@ final class UpdateMonitor: ObservableObject {
 
     private func recomputeDisplay() {
         defer { scheduleDisplayTimer() }
+        countdownSeconds = nil
 
         guard let target = targetDate else {
-            status = .none
-            countdownText = nil
+            setDisplay(status: .none, countdownText: nil)
             return
         }
 
@@ -695,33 +728,40 @@ final class UpdateMonitor: ObservableObject {
         // applies, so show nothing.
         if let targetVersion = targetOSVersion,
            Self.compareVersions(Self.currentOSVersionString(), targetVersion) >= 0 {
-            status = .none
-            countdownText = nil
+            setDisplay(status: .none, countdownText: nil)
             return
         }
 
         let remaining = target.timeIntervalSinceNow
 
         if remaining <= 0 {
-            status = .expired
-            countdownText = nil
+            setDisplay(status: .expired, countdownText: nil)
             return
         }
 
-        status = .scheduled
-
+        let text: String
         if remaining <= Self.urgentThreshold {
             let totalSeconds = Int(remaining)
             let hours = totalSeconds / 3600
             let minutes = (totalSeconds % 3600) / 60
             let seconds = totalSeconds % 60
-            countdownText = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            countdownSeconds = totalSeconds
         } else {
             // Days remaining, rounded up, wrapped in the configured prefix and
             // suffix: "4d", "4j", "D-4". Either can be empty.
             let days = Int(ceil(remaining / (24 * 60 * 60)))
-            countdownText = "\(localizedDayPrefix)\(days)\(localizedDaySuffix)"
+            text = "\(localizedDayPrefix)\(days)\(localizedDaySuffix)"
         }
+
+        setDisplay(status: .scheduled, countdownText: text)
+    }
+
+    // @Published fires on every assignment, even with the same value. Only
+    // assign on change so subscribers aren't woken on every tick.
+    private func setDisplay(status newStatus: Status, countdownText newText: String?) {
+        if status != newStatus { status = newStatus }
+        if countdownText != newText { countdownText = newText }
     }
 
     // Every second inside the urgent window so HH:mm:ss ticks live, every minute
@@ -729,10 +769,14 @@ final class UpdateMonitor: ObservableObject {
     private func scheduleDisplayTimer() {
         displayTimer?.invalidate()
         let remaining = targetDate?.timeIntervalSinceNow ?? -1
-        let interval: TimeInterval = (remaining > 0 && remaining <= Self.urgentThreshold) ? 1 : 60
-        displayTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+        let isUrgent = remaining > 0 && remaining <= Self.urgentThreshold
+        // Lands just past the next whole second, so the digits don't drift or skip.
+        let interval: TimeInterval = isUrgent ? remaining - floor(remaining) + 0.01 : 60
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in self?.recomputeDisplay() }
         }
+        if isUrgent { timer.tolerance = 0 }
+        displayTimer = timer
     }
 
     // MARK: - Date formatting
@@ -753,10 +797,14 @@ final class UpdateMonitor: ObservableObject {
         return f
     }()
 
+    // Locale.autoupdatingCurrent is clamped to the languages this app
+    // declares, so it ignores the system language. preferredLanguages isn't.
+    private static var preferredLocale: Locale {
+        Locale.preferredLanguages.first.map(Locale.init(identifier:)) ?? .autoupdatingCurrent
+    }
+
     static func formattedDateTime(_ date: Date) -> String {
-        // Locale.autoupdatingCurrent is clamped to the languages this app
-        // declares, so it ignores the system language. preferredLanguages isn't.
-        let locale = Locale.preferredLanguages.first.map(Locale.init(identifier:)) ?? .autoupdatingCurrent
+        let locale = preferredLocale
         dateOnlyFormatter.locale = locale
         timeOnlyFormatter.locale = locale
         return "\(dateOnlyFormatter.string(from: date)), \(timeOnlyFormatter.string(from: date))"

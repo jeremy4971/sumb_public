@@ -2,7 +2,13 @@
   "images" : [
     {
       "filename" : "macos15-update.png",
-      "idiom" : "universal"
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "macos15-update@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
     }
   ],
   "info" : {

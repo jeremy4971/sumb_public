@@ -2,9 +2,8 @@
 //  MenuContentView.swift
 //  updatecountdown
 //
-//  The dropdown shown when the menu bar item is clicked. It's a custom
-//  NSMenuItem view rather than an NSPopover, so it sits flush under the
-//  status item with no gap or show animation.
+//  What you see when clicking the menu bar icon: the update deadline, the
+//  restart warning and the Update Now button.
 //
 
 import SwiftUI

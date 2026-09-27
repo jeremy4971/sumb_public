@@ -2,8 +2,7 @@
 //  OptionsView.swift
 //  updatecountdown
 //
-//  Content for the Options window, opened from the status item's right-click
-//  menu. One view per tab.
+//  The Settings window content, with its General, Localization and About tabs.
 //
 
 import SwiftUI
@@ -54,6 +53,21 @@ struct GeneralOptionsView: View {
                     Toggle("Hide settings", isOn: $monitor.disableContextMenuActions)
                         .disabled(monitor.isManaged(UpdateMonitor.Keys.disableContextMenuActions))
                     Text("Option-right-clicking the menu bar icon will reveal the settings menu.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    LabeledContent("Dot blinking") {
+                        HStack(alignment: .firstTextBaseline) {
+                            TextField("", value: $monitor.dotBlinkingDays, format: .number)
+                                .labelsHidden()
+                                .frame(width: 50)
+                            Text("days before update")
+                        }
+                    }
+                    .disabled(monitor.isManaged(UpdateMonitor.Keys.dotBlinkingDays))
+                    Text("Blink the red dot as the deadline gets close. Set to 0 to turn it off.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -192,7 +206,7 @@ struct LocalizationOptionsView: View {
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.reminderNotificationTitle))
 
                 multilineField("Body", text: $monitor.reminderNotificationBody,
-                                lines: 3, caption: "Variables : $VERSION · $DATE")
+                                lines: 3, caption: "Variables : $VERSION · $DATE · $COUNTDOWN")
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.reminderNotificationBody))
             }
 

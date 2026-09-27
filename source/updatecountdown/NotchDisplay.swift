@@ -2,8 +2,8 @@
 //  NotchDisplay.swift
 //  updatecountdown
 //
-//  Hides the notch by switching the main display to a shorter Retina mode.
-//  There's no public API for this.
+//  Hides the notch on MacBooks by switching the screen to a slightly shorter
+//  size, and brings it back.
 //
 
 import AppKit

@@ -2,7 +2,13 @@
   "images" : [
     {
       "filename" : "macos-logo2.png",
-      "idiom" : "universal"
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "macos-logo2@2x.png",
+      "idiom" : "universal",
+      "scale" : "2x"
     }
   ],
   "info" : {
