@@ -129,7 +129,12 @@ fi
 In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/extension_attribute/scheduled_version_date.sh) to display a computer's update deadline.
 
 ### Patch Definition for Jamf
-You can find a patch definition [here](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/software_title_editor/sumb_github_releases.json) for [Jamf Software Title Editor](https://learn.jamf.com/r/en-US/title-editor/Title_Editor_Documentation) / [Jamf Pro Patch Management](https://learn.jamf.com/r/en-US/jamf-pro-documentation-current/PatchManagement).
+
+Access the SUMB patch definition for Jamf Software Title Editor / Patch Management [here](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/software_title_editor/sumb_github_releases.json). You can also add my custom patch source to your Jamf Pro server. Please note that this is still experimental. Read the [How-to guide](https://learn.jamf.com/r/en-US/jamf-pro-documentation-current/Adding_a_Patch_External_Source_to_Jamf_Pro) for setup instructions.
+
+* Host: `patch.jeremyb.fr`
+* Port: `443`
+* SSL: `Yes`
 
 ### Declarative Device Management (DDM)
 
