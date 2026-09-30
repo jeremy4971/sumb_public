@@ -5,7 +5,7 @@ CURRENT_USER=$(/usr/bin/stat -f %Su /dev/console)
 USER_ID=$(/usr/bin/id -u "$CURRENT_USER")
 
 # Unload LaunchAgent
-/bin/launchctl bootout gui/$USER_ID /Library/LaunchAgents/fr.jeremyb.sumb.plist
+/bin/launchctl bootout gui/"$USER_ID" /Library/LaunchAgents/fr.jeremyb.sumb.plist
 
 # Kill SUMB if still running
 if /usr/bin/pgrep -x "SUMB"; then

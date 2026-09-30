@@ -11,7 +11,7 @@ autoload is-at-least
 os_version=$(sw_vers -productVersion)
 
 # Gatekeeper scan. Avoid the verifying dialog on first launch
-if is-at-least 14.0 ${os_version}; then
+if is-at-least 14.0 "${os_version}"; then
 	gktool scan "/Applications/SUMB.app"
 fi
 
