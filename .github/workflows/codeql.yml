@@ -1,13 +1,7 @@
 name: CodeQL
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: "0 6 * * 1" # every Monday 06:00 UTC
-  workflow_dispatch: # lets you run it manually from the Actions tab
+  workflow_dispatch: # run manually from Actions → CodeQL → Run workflow
 
 jobs:
   analyze:
