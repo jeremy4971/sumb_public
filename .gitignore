@@ -19,3 +19,6 @@ CLAUDE.md
 .Spotlight-V100
 .Trashes
 
+# CodeQL
+sumb-codeql-db/
+sumb-results.csv
