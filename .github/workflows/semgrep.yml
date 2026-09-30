@@ -18,11 +18,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Semgrep (Community Edition, no account needed)
-        run: |
-          semgrep scan --config auto \
-            --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
-            --sarif --output semgrep.sarif
+      - name: Run Semgrep (Pro engine and Pro rules via your semgrep.dev account)
+        run: semgrep ci --sarif --output semgrep.sarif
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
       - name: Upload results to GitHub Security tab
         if: always()
