@@ -1,0 +1,29 @@
+name: Semgrep
+
+on:
+  workflow_dispatch: # run manually from Actions → Semgrep → Run workflow
+
+jobs:
+  semgrep:
+    name: Semgrep scan
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep (Community Edition, no account needed)
+        run: semgrep scan --config auto --sarif --output semgrep.sarif
+
+      - name: Upload results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
