@@ -2,8 +2,8 @@
 //  AppDelegate.swift
 //  updatecountdown
 //
-//  The menu bar icon and its countdown, the click and right-click menus,
-//  the Settings window and the reminder notifications.
+//  The menu bar icon and its countdown, the Dock icon, the click and
+//  right-click menus, the Settings window and the reminder notifications.
 //
 
 import Cocoa
@@ -25,14 +25,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var reminderTimer: Timer?
     private var wasWithinReminderWindow = false
     private var didSendExpiredNotification = false
-    private var pendingOptionsWindowTimer: Timer?
     private var blinkTimer: Timer?
     private var halfSecondBlinkTimer: Timer?
     private var isBadgeDotVisible = true
+    private let dockTileView = DockTileView()
+    private var pendingOptionsWindowTimer: Timer?
     private var suppressReopenUntil: Date = .distantPast
     private var cancellables = Set<AnyCancellable>()
-
-    private nonisolated static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension")!
 
     private static let notificationReopenGrace: TimeInterval = 0.5
 
@@ -41,24 +40,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         false
     }
 
-    // Relaunching SUMB.app re-opens settings when the status item is hidden.
-    // Deferred because a notification click also lands here as a reopen.
+    // A Dock click opens Software Update. With the Dock icon hidden, a relaunch
+    // opens Settings instead.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        guard Date() >= suppressReopenUntil else { return true }
+        guard NSApp.activationPolicy() == .accessory else {
+            NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
+            return false
+        }
 
+        // Deferred because a notification click also lands here as a reopen.
+        guard Date() >= suppressReopenUntil else { return false }
         pendingOptionsWindowTimer?.invalidate()
         pendingOptionsWindowTimer = Timer.scheduledTimer(
             withTimeInterval: Self.notificationReopenGrace, repeats: false
         ) { [weak self] _ in
             Task { @MainActor [weak self] in self?.showOptionsWindow() }
         }
-        return true
+        return false
     }
 
     private func suppressOptionsWindowForNotification() {
         pendingOptionsWindowTimer?.invalidate()
         pendingOptionsWindowTimer = nil
         suppressReopenUntil = Date().addingTimeInterval(Self.notificationReopenGrace)
+    }
+
+    // Same rule as the right-click menu: hidden under lockdown unless Option is held.
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        guard !monitor.disableContextMenuActions || NSEvent.modifierFlags.contains(.option) else { return nil }
+        let menu = NSMenu()
+        let item = menu.addItem(withTitle: "Settings…", action: #selector(showOptionsWindow), keyEquivalent: "")
+        item.target = self
+        return menu
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -80,11 +93,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 // objectWillChange fires *before* the value updates, so defer.
-                DispatchQueue.main.async { self?.refreshStatusItem() }
+                DispatchQueue.main.async {
+                    self?.refreshStatusItem()
+                    self?.updateDockVisibility()
+                    self?.refreshDockTile()
+                }
             }
             .store(in: &cancellables)
 
+        dockTileView.frame = NSRect(origin: .zero, size: NSApp.dockTile.size)
         refreshStatusItem()
+        updateDockVisibility()
+        refreshDockTile()
 
         // @Published emits on subscribe, so this also applies at launch and a
         // forced value takes effect right away.
@@ -122,14 +142,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             .sink { [weak self] _ in self?.wasWithinReminderWindow = true }
             .store(in: &cancellables)
 
-        // removeDuplicates on `status`: recomputeDisplay() reassigns it on every
-        // display tick, which would restart the timer before it ever fires.
         Publishers.Merge5(
             monitor.$targetDate.map { _ in () },
             monitor.$reminderThresholdDays.map { _ in () },
             monitor.$reminderIntervalMinutes.map { _ in () },
             monitor.$notificationsEnabled.map { _ in () },
-            monitor.$status.removeDuplicates().map { _ in () }
+            monitor.$status.map { _ in () }
         )
         .receive(on: RunLoop.main)
         .sink { [weak self] _ in self?.updateReminderScheduling() }
@@ -138,7 +156,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // Once per crossing. The flag resets when status leaves .expired so a
         // later crossing can fire again.
         monitor.$status
-            .removeDuplicates()
             .receive(on: RunLoop.main)
             .sink { [weak self] status in
                 guard let self else { return }
@@ -236,8 +253,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         updateBadgeBlinking(showsRedBadge && shouldBlinkDot)
         button.image = showsRedBadge ? currentBadgedImage : Self.upToDateStatusImage
 
-        let isUpToDate = monitor.status == .none && monitor.recommendedOSVersion == nil
         statusItem?.isVisible = !(monitor.hideIconWhenUpToDate && isUpToDate)
+    }
+
+    private var isUpToDate: Bool {
+        monitor.status == .none && monitor.recommendedOSVersion == nil
     }
 
     // Also blinks once the deadline has passed, but not for a newer version with
@@ -297,6 +317,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private func stopBlinkTimer() {
         blinkTimer?.invalidate()
         blinkTimer = nil
+    }
+
+    // MARK: - Dock tile
+
+    // Shown while an update is available if the setting is on, and always while
+    // Settings is open so it behaves like a normal app window.
+    private func updateDockVisibility() {
+        let showsDock = (monitor.showDockIcon && !isUpToDate) || optionsWindow != nil
+        let policy: NSApplication.ActivationPolicy = showsDock ? .regular : .accessory
+        guard NSApp.activationPolicy() != policy else { return }
+        NSApp.setActivationPolicy(policy)
+        if showsDock { NSApp.dockTile.display() }
+    }
+
+    // The menu bar countdown in the badge, "!" past the deadline. Up to date,
+    // the content view is removed so the Dock draws the regular icon.
+    private func refreshDockTile() {
+        let badge: String?
+        switch monitor.status {
+        case .scheduled: badge = monitor.countdownText
+        case .expired: badge = "!"
+        // A newer macOS with no deadline.
+        case .none: badge = isUpToDate ? nil : "1"
+        }
+
+        guard badge != dockTileView.badge else { return }
+        dockTileView.centersBadge = monitor.countdownSeconds != nil
+        dockTileView.badge = badge
+        NSApp.dockTile.contentView = badge == nil ? nil : dockTileView
+        NSApp.dockTile.display()
     }
 
     // MARK: - Status item click handling
@@ -435,8 +485,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Measured, not computed: SwiftUI's reported fitting size for the
     // Localization tab's Grid wasn't reliable.
     private static let optionsWindowWidth: CGFloat = 440
-    private static let generalTabHeight: CGFloat = 696
-    private static let localizationTabHeight: CGFloat = 700
+    private static let generalTabHeight: CGFloat = 590
+    private static let localizationTabHeight: CGFloat = 590
     private static let aboutTabHeight: CGFloat = 260
 
     // Saved as "NSWindow Frame SUMBSettingsWindow" in defaults.
@@ -507,9 +557,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             optionsWindow = window
         }
 
-        // Regular app while Options is open, so macOS doesn't hand the front to
-        // another app when a system pane closes.
-        NSApp.setActivationPolicy(.regular)
+        updateDockVisibility()
 
         // Activate first, or the window stays behind the frontmost app.
         NSApp.activate()
@@ -523,16 +571,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     func windowWillClose(_ notification: Notification) {
         guard (notification.object as? NSWindow) === optionsWindow else { return }
-        // Deferred: demoting while the window is still on screen leaves the
-        // menu bar and the Dock icon behind for a frame.
+        // Deferred: hiding the Dock icon while the window is still on screen
+        // leaves the menu bar and the Dock icon behind for a frame.
         Task { @MainActor [weak self] in
-            NSApp.setActivationPolicy(.accessory)
-
             // Free the autosave name so the next window can take it.
             self?.optionsWindow?.setFrameAutosaveName("")
             self?.optionsWindow?.delegate = nil
             self?.optionsWindow?.contentViewController = nil
             self?.optionsWindow = nil
+            self?.updateDockVisibility()
         }
     }
 
@@ -613,7 +660,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         switch response.actionIdentifier {
         case UpdateMonitor.updateActionIdentifier, UNNotificationDefaultActionIdentifier:
-            NSWorkspace.shared.open(Self.softwareUpdateURL)
+            NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
         default:
             break
         }

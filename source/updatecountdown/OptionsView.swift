@@ -34,9 +34,17 @@ struct GeneralOptionsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Hide icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
+                    Toggle("Hide menu bar icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
                         .disabled(monitor.isManaged(UpdateMonitor.Keys.hideIconWhenUpToDate))
                     Text("Launch SUMB.app to re-open settings.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Show Dock icon", isOn: $monitor.showDockIcon)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.showDockIcon))
+                    Text("Visible only when there is an update available.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

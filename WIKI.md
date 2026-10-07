@@ -6,15 +6,16 @@ File domain : `fr.jeremyb.sumb`
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `hideIconWhenUpToDate` | boolean | `false` | Remove the SUMB icon from the menu bar when the Mac is up to date. |
-| `disableContextMenuActions` | boolean | `false` | Hide the Settings menu. Holding Option while right-clicking still reveals it, as does relaunching SUMB.app. |
+| `showDockIcon` | boolean | `false` | Show the SUMB icon in the Dock when an update is available. |
+| `disableContextMenuActions` | boolean | `false` | Hide the Settings menu. Holding Option while right-clicking the menu bar icon still reveals it, as does relaunching SUMB.app. |
 | `ignoreAppleUpdateChannel` | boolean | `false` | Ignore updates from the standard Apple software update channel; only take managed update declarations (DDM) into account. |
 | `notificationsEnabled` | boolean | `true` | Allow SUMB to post reminder notifications about the scheduled macOS update. |
-| `notificationSound` | string | *(empty)* | Sound played with the notification. Leave empty for the system default tone. Only files located in `/System/Library/Sounds` are supported (e.g., `Blow.aiff`, `Sosumi.aiff`, `Morse.aiff`). |
+| `notificationSound` | string | *(empty)* | Sound played with the notification. Type only the filename with its extension, not the full path. Leave empty for the system default tone. Only files located in `/System/Library/Sounds` are supported (e.g., `Blow.aiff` `Sosumi.aiff` `Morse.aiff`). |
 | `dotBlinkingDays` | integer | `0` | Number of days before the update deadline at which the red dot on the menu bar icon starts blinking. `0` turns blinking off. |
 | `reminderThresholdDays` | integer | `2` | Days remaining before the update deadline at which SUMB starts sending reminder notifications. (min: 0) |
 | `reminderIntervalMinutes` | integer | `120` | Time in minutes between two reminder notifications. (min: 1) |
-| `reminderNotificationTitle` | string | `Managed Update` | Title displayed in the reminder notification. |
-| `reminderNotificationBody` | string | `An update to macOS $VERSION has been scheduled for $DATE.` | Body text of the reminder notification. Supports `$VERSION` and `$DATE` variables. |
+| `reminderNotificationTitle` | string | `Managed Update` | Title displayed in the reminder notification. Supports `$VERSION`, `$DATE` and `$COUNTDOWN` variables. |
+| `reminderNotificationBody` | string | `An update to macOS $VERSION has been scheduled for $DATE.` | Body text of the reminder notification. Supports `$VERSION`, `$DATE` and `$COUNTDOWN` variables. |
 | `localizedPopoverTitle` | string | `macOS Update` | Title shown at the top of the popover displayed when the user clicks the menu bar icon. |
 | `localizedRestartWarning` | string | `Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)` | Warning at the bottom of the popover. Supports Markdown links. |
 | `localizedUpdateNowButton` | string | `Open Software Update` | Label of the button that takes the user to Software Update. |
@@ -22,6 +23,7 @@ File domain : `fr.jeremyb.sumb`
 | `localizedUpdatingMenuBar` | string | `Preparing update...` | Text shown in the menu bar while the update is being prepared. |
 | `localizedDayPrefix` | string | *(empty)* | Text placed before the number of days remaining in the menu bar countdown. |
 | `localizedDaySuffix` | string | `d` | Suffix appended to the number of days remaining (e.g. "j" in French, "t" in German). |
+
 
 
 ### Application & Custom Settings
@@ -68,6 +70,8 @@ File domain : `fr.jeremyb.sumb`
 	<string>Managed Update</string>
 	<key>reminderThresholdDays</key>
 	<integer>2</integer>
+	<key>showDockIcon</key>
+	<false/>
 </dict>
 </plist>
 ```
@@ -95,6 +99,31 @@ Experimental. When the menu bar is full, SUMB can get hidden behind the notch. R
     # Show notch
     /Applications/SUMB.app/Contents/MacOS/SUMB -notch
 
+## Jamf Assets
+
+### Extension Attribute
+
+In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/extension_attribute/scheduled_version_date.sh) to display a computer's update deadline.
+
+### Patch Definition
+
+Access the SUMB patch definition for Jamf Software Title Editor / Patch Management [here](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/software_title_editor/SUMB.json). You can also add my custom patch source to your Jamf Pro server. Please note that this is still experimental. Read the [How-to guide](https://learn.jamf.com/r/en-US/jamf-pro-documentation-11.31.0/Adding_a_Patch_External_Source_to_Jamf_Pro?content-lang=en-US) for setup instructions.
+
+* Host: `patch.jeremyb.fr`
+* Port: `443`
+* SSL: `Yes`
+
+## Declarative Device Management (DDM)
+
+### Jamf
+Schedule a DDM update in the Blueprints menu
+![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png)
+
+### SimpleMDM
+Create a Managed Software Update profile
+![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png)
+
+## Miscellaneous
 
 ### Uninstall SUMB
 Use the [payload-free uninstaller package](https://github.com/jeremy4971/sumb_public/releases/download/v1.3.0/SUMBUninstaller-1.0.0.pkg) or the script below.
@@ -123,28 +152,6 @@ fi
 # Reload preferences
 /usr/bin/killall cfprefsd
 ```
-
-### Extension Attribute for Jamf
-
-In Jamf, use this [Extension Attribute](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/extension_attribute/scheduled_version_date.sh) to display a computer's update deadline.
-
-### Patch Definition for Jamf
-
-Access the SUMB patch definition for Jamf Software Title Editor / Patch Management [here](https://github.com/jeremy4971/sumb_public/blob/main/jamf_assets/software_title_editor/SUMB.json). You can also add my custom patch source to your Jamf Pro server. Please note that this is still experimental. Read the [How-to guide](https://learn.jamf.com/r/en-US/jamf-pro-documentation-11.31.0/Adding_a_Patch_External_Source_to_Jamf_Pro?content-lang=en-US) for setup instructions.
-
-* Host: `patch.jeremyb.fr`
-* Port: `443`
-* SSL: `Yes`
-
-### Declarative Device Management (DDM)
-
-#### Jamf
-Schedule a DDM update in the Blueprints menu
-![Blueprint](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/jamf-blueprint3.png)
-
-#### SimpleMDM
-Create a Managed Software Update profile
-![DDM update on SimpleMDM](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/simplemdm_ddm.png)
 
 ### Troubleshooting
 Holding Option and right-clicking the menu bar icon reveals the two update .plist files that SUMB uses to determine the deadline and target OS version.

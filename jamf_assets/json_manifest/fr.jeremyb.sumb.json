@@ -12,9 +12,19 @@
                 "infoText": "Key name: hideIconWhenUpToDate"
             }
         },
+        "showDockIcon": {
+            "title": "Show Dock Icon",
+            "description": "Show the SUMB icon in the Dock when an update is available, with the countdown in a red badge.",
+            "property_order": 15,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: showDockIcon"
+            }
+        },
         "disableContextMenuActions": {
             "title": "Disable Context Menu Actions",
-            "description": "Hide the Settings menu. Holding Option while right-clicking still reveals it, as does relaunching SUMB.app.",
+            "description": "Hide the Settings menu. Holding Option while right-clicking the menu bar icon still reveals it, as does relaunching SUMB.app.",
             "property_order": 20,
             "type": "boolean",
             "default": false,

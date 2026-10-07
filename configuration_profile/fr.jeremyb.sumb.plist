@@ -36,5 +36,7 @@
 	<string>Managed Update</string>
 	<key>reminderThresholdDays</key>
 	<integer>2</integer>
+	<key>showDockIcon</key>
+	<false/>
 </dict>
 </plist>

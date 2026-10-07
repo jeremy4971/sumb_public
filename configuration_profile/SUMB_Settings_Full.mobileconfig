@@ -49,6 +49,8 @@
 			<string>Managed Update</string>
 			<key>reminderThresholdDays</key>
 			<integer>4</integer>
+			<key>showDockIcon</key>
+			<false/>
 		</dict>
 		<dict>
 			<key>NotificationSettings</key>

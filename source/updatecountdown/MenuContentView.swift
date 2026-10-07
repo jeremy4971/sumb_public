@@ -10,7 +10,7 @@ import SwiftUI
 
 struct MenuContentView: View {
     @ObservedObject var monitor: UpdateMonitor
-    var onUpdateNow: () -> Void = {}
+    let onUpdateNow: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -167,9 +167,7 @@ struct MenuContentView: View {
     // MARK: - Actions
 
     private func openSoftwareUpdate() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension") {
-            NSWorkspace.shared.open(url)
-        }
+        NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
         onUpdateNow()
     }
 }

@@ -3,8 +3,8 @@
   "publisher": "Jeremy B.",
   "appName": "SUMB.app",
   "bundleId": "fr.jeremyb.sumb",
-  "lastModified": "2026-09-27T18:18:00Z",
-  "currentVersion": "1.3.0",
+  "lastModified": "2026-10-07T12:12:00Z",
+  "currentVersion": "1.4.0",
   "id": "SUMB",
   "requirements": [
     {
@@ -16,6 +16,46 @@
     }
   ],
   "patches": [
+    {
+      "version": "1.4.0",
+      "releaseDate": "2026-10-07T12:12:00Z",
+      "standalone": true,
+      "minimumOperatingSystem": "15.0",
+      "reboot": false,
+      "killApps": [],
+      "components": [
+        {
+          "name": "SUMB",
+          "version": "1.4.0",
+          "criteria": [
+            {
+              "and": true,
+              "name": "Application Bundle ID",
+              "operator": "is",
+              "value": "fr.jeremyb.sumb",
+              "type": "recon"
+            },
+            {
+              "and": true,
+              "name": "Application Version",
+              "operator": "is",
+              "value": "1.4.0",
+              "type": "recon"
+            }
+          ]
+        }
+      ],
+      "capabilities": [
+        {
+          "and": true,
+          "name": "Operating System Version",
+          "operator": "greater than or equal",
+          "value": "15.0",
+          "type": "recon"
+        }
+      ],
+      "dependencies": []
+    },
     {
       "version": "1.3.0",
       "releaseDate": "2026-09-27T18:18:00Z",

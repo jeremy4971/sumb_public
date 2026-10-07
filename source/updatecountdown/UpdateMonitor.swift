@@ -30,6 +30,7 @@ final class UpdateMonitor: ObservableObject {
         static let demoDate = "demoDate"
         static let demoOSVersion = "demoOSVersion"
         static let hideIconWhenUpToDate = "hideIconWhenUpToDate"
+        static let showDockIcon = "showDockIcon"
         static let dotBlinkingDays = "dotBlinkingDays"
         static let hideNotch = "hideNotch"
         static let ignoreAppleUpdateChannel = "ignoreAppleUpdateChannel"
@@ -51,7 +52,7 @@ final class UpdateMonitor: ObservableObject {
 
         // hideNotch is missing on purpose, see the property below.
         static let all: [String] = [
-            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate, dotBlinkingDays,
+            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate, showDockIcon, dotBlinkingDays,
             ignoreAppleUpdateChannel,
             notificationsEnabled, reminderThresholdDays, reminderIntervalMinutes,
             reminderNotificationTitle, reminderNotificationBody, notificationSound,
@@ -66,6 +67,8 @@ final class UpdateMonitor: ObservableObject {
     // every post.
     nonisolated static let updateActionIdentifier = "OPEN_SOFTWARE_UPDATE"
     nonisolated static let reminderCategoryIdentifier = "UPDATE_REMINDER"
+
+    nonisolated static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension")!
 
     // MARK: - Published state
 
@@ -122,6 +125,13 @@ final class UpdateMonitor: ObservableObject {
 
     @Published var hideIconWhenUpToDate: Bool {
         didSet { UserDefaults.standard.set(hideIconWhenUpToDate, forKey: Keys.hideIconWhenUpToDate) }
+    }
+
+    // MARK: - Dock icon
+
+    /// Shows the Dock icon while an update is available. Off never shows it.
+    @Published var showDockIcon: Bool {
+        didSet { UserDefaults.standard.set(showDockIcon, forKey: Keys.showDockIcon) }
     }
 
     /// Days before the deadline when the red badge dot starts blinking. 0 means never.
@@ -232,6 +242,7 @@ final class UpdateMonitor: ObservableObject {
         let demoDate: Date
         let demoOSVersion: String
         let hideIconWhenUpToDate: Bool
+        let showDockIcon: Bool
         let dotBlinkingDays: Int
         let hideNotch: Bool
         let ignoreAppleUpdateChannel: Bool
@@ -261,6 +272,7 @@ final class UpdateMonitor: ObservableObject {
             demoOSVersion: (defaults.string(forKey: Keys.demoOSVersion))
                 ?? "27.9.0",
             hideIconWhenUpToDate: (defaults.object(forKey: Keys.hideIconWhenUpToDate) as? Bool) ?? false,
+            showDockIcon: (defaults.object(forKey: Keys.showDockIcon) as? Bool) ?? false,
             dotBlinkingDays: (defaults.object(forKey: Keys.dotBlinkingDays) as? Int) ?? 0,
             hideNotch: (defaults.object(forKey: Keys.hideNotch) as? Bool) ?? NotchDisplay.isHidden(),
             ignoreAppleUpdateChannel: (defaults.object(forKey: Keys.ignoreAppleUpdateChannel) as? Bool) ?? false,
@@ -292,6 +304,7 @@ final class UpdateMonitor: ObservableObject {
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
+        showDockIcon = loaded.showDockIcon
         dotBlinkingDays = loaded.dotBlinkingDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
@@ -332,6 +345,7 @@ final class UpdateMonitor: ObservableObject {
             Keys.reminderNotificationBody: reminderNotificationBody,
             Keys.reminderNotificationTitle: reminderNotificationTitle,
             Keys.reminderThresholdDays: reminderThresholdDays,
+            Keys.showDockIcon: showDockIcon,
         ]
         guard let data = try? PropertyListSerialization.data(fromPropertyList: settings, format: .xml, options: 0) else {
             return nil
@@ -347,6 +361,7 @@ final class UpdateMonitor: ObservableObject {
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
+        showDockIcon = loaded.showDockIcon
         dotBlinkingDays = loaded.dotBlinkingDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
@@ -369,14 +384,6 @@ final class UpdateMonitor: ObservableObject {
         startWatchingManagedPreferences()
         reloadRecommendedUpdate()
         startWatchingSoftwareUpdatePlist()
-    }
-
-    deinit {
-        fileWatchSource?.cancel()
-        softwareUpdatePlistWatchSource?.cancel()
-        managedPreferencesWatchSources.forEach { $0.cancel() }
-        displayTimer?.invalidate()
-        managedPreferencesChangeDebounceTimer?.invalidate()
     }
 
     // MARK: - Public
@@ -478,7 +485,7 @@ final class UpdateMonitor: ObservableObject {
         let remaining = target.timeIntervalSinceNow
         guard remaining > 0 else { return "0" }
         if remaining > urgentThreshold {
-            return String(Int(ceil(remaining / (24 * 60 * 60))))
+            return String(daysRemaining(remaining))
         }
         // 8640s is a tenth of a day.
         let days = Double(min(9, max(1, Int(remaining / 8640)))) / 10
@@ -516,8 +523,8 @@ final class UpdateMonitor: ObservableObject {
         !managedKeys.isEmpty
     }
 
-    /// Hides "Settings…" from the right-click menu. Option-right-click or
-    /// relaunching the app still gets you there.
+    /// Hides "Settings…" from the right-click and Dock menus. Option-right-click
+    /// or relaunching the app with the Dock icon hidden still gets you there.
     @Published var disableContextMenuActions: Bool {
         didSet { UserDefaults.standard.set(disableContextMenuActions, forKey: Keys.disableContextMenuActions) }
     }
@@ -750,11 +757,16 @@ final class UpdateMonitor: ObservableObject {
         } else {
             // Days remaining, rounded up, wrapped in the configured prefix and
             // suffix: "4d", "4j", "D-4". Either can be empty.
-            let days = Int(ceil(remaining / (24 * 60 * 60)))
+            let days = Self.daysRemaining(remaining)
             text = "\(localizedDayPrefix)\(days)\(localizedDaySuffix)"
         }
 
         setDisplay(status: .scheduled, countdownText: text)
+    }
+
+    // Shared by the menu bar and $COUNTDOWN so they always agree.
+    private static func daysRemaining(_ remaining: TimeInterval) -> Int {
+        Int(ceil(remaining / (24 * 60 * 60)))
     }
 
     // @Published fires on every assignment, even with the same value. Only

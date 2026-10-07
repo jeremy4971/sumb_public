@@ -7,8 +7,6 @@
 //
 
 import AppKit
-import CoreGraphics
-import Darwin
 
 private typealias CGDisplayModeGetIOFlagsFn = @convention(c) (CGDisplayMode) -> UInt32
 
