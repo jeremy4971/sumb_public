@@ -1,0 +1,332 @@
+{
+    "title": "SUMB - Software Update Menu Bar (fr.jeremyb.sumb)",
+    "description": "Managed settings for SUMB, a companion menu bar app for scheduled macOS updates deployed via blueprints/DDM. Preference domain: fr.jeremyb.sumb. Requires macOS 15.0 or later.",
+    "properties": {
+        "hideIconWhenUpToDate": {
+            "title": "Hide Menu Bar Icon When Up to Date",
+            "description": "Remove the SUMB icon from the menu bar when the Mac is up to date.",
+            "property_order": 10,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: hideIconWhenUpToDate"
+            }
+        },
+        "hideSettings": {
+            "title": "Disable Settings",
+            "description": "Hide the Settings menu. Holding Option while right-clicking the menu bar icon still reveals it, as does relaunching SUMB.app.",
+            "property_order": 20,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: hideSettings"
+            }
+        },
+        "ignoreAppleUpdateChannel": {
+            "title": "Ignore Apple Update Channel",
+            "description": "Ignore updates from the standard Apple software update channel; only take managed update declarations (DDM) into account.",
+            "property_order": 30,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: ignoreAppleUpdateChannel"
+            }
+        },
+        "menubarDotBlinkingThresholdDays": {
+            "title": "Dot Blinking (days)",
+            "description": "Number of days before the update deadline at which the red dot on the menu bar icon starts blinking. 0 turns blinking off.",
+            "property_order": 40,
+            "type": "integer",
+            "default": 2,
+            "minimum": 0,
+            "options": {
+                "infoText": "Key name: menubarDotBlinkingThresholdDays"
+            }
+        },
+        "menubarPrefix": {
+            "title": "Day Prefix",
+            "description": "Text placed before the number of days remaining in the menu bar countdown.",
+            "property_order": 50,
+            "type": "string",
+            "default": "",
+            "options": {
+                "infoText": "Key name: menubarPrefix"
+            }
+        },
+        "menubarPreparingMessage": {
+            "title": "Updating Menu Bar Text",
+            "description": "Text shown in the menu bar while the update is being prepared.",
+            "property_order": 60,
+            "type": "string",
+            "default": "Preparing update...",
+            "options": {
+                "infoText": "Key name: menubarPreparingMessage"
+            }
+        },
+        "menubarSuffix": {
+            "title": "Day Suffix",
+            "description": "Text placed after the number of days remaining (e.g. \"j\" in French, \"t\" in German).",
+            "property_order": 70,
+            "type": "string",
+            "default": "d",
+            "options": {
+                "infoText": "Key name: menubarSuffix"
+            }
+        },
+        "notificationBody": {
+            "title": "Reminder Notification Body",
+            "description": "Body text of the reminder notification. Supports $VERSION, $DATE and $COUNTDOWN variables.",
+            "property_order": 80,
+            "type": "string",
+            "default": "An update to macOS $VERSION has been scheduled for $DATE.",
+            "options": {
+                "infoText": "Key name: notificationBody - variables: $VERSION, $DATE, $COUNTDOWN"
+            }
+        },
+        "notificationIntervalMinutes": {
+            "title": "Reminder Interval (minutes)",
+            "description": "Time in minutes between two reminder notifications. (min: 1)",
+            "property_order": 90,
+            "type": "integer",
+            "default": 120,
+            "minimum": 1,
+            "options": {
+                "infoText": "Key name: notificationIntervalMinutes"
+            }
+        },
+        "notificationSound": {
+            "title": "Alert Sound",
+            "description": "Alert sound, played with the notification and the Scheduler popup. Type only the filename with its extension, not the full path. Leave empty for the system default tone. Only files located in /System/Library/Sounds are supported (e.g., Blow.aiff Sosumi.aiff Morse.aiff).",
+            "property_order": 100,
+            "type": "string",
+            "default": "",
+            "enum": ["", "Basso.aiff", "Blow.aiff", "Bottle.aiff", "Frog.aiff", "Funk.aiff", "Glass.aiff", "Hero.aiff", "Morse.aiff", "Ping.aiff", "Pop.aiff", "Purr.aiff", "Sosumi.aiff", "Submarine.aiff", "Tink.aiff"],
+            "options": {
+                "enum_titles": ["Default", "Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink"],
+                "infoText": "Key name: notificationSound - a file name from /System/Library/Sounds"
+            }
+        },
+        "notificationThresholdDays": {
+            "title": "Reminder Threshold (days)",
+            "description": "Days remaining before the update deadline at which SUMB starts sending reminder notifications. (min: 0)",
+            "property_order": 110,
+            "type": "integer",
+            "default": 4,
+            "minimum": 0,
+            "options": {
+                "infoText": "Key name: notificationThresholdDays"
+            }
+        },
+        "notificationTitle": {
+            "title": "Reminder Notification Title",
+            "description": "Title displayed in the reminder notification. Supports $VERSION, $DATE and $COUNTDOWN variables.",
+            "property_order": 120,
+            "type": "string",
+            "default": "Managed Update",
+            "options": {
+                "infoText": "Key name: notificationTitle - variables: $VERSION, $DATE, $COUNTDOWN"
+            }
+        },
+        "notificationsEnabled": {
+            "title": "Enable Notifications",
+            "description": "Allow SUMB to post reminder notifications about the scheduled macOS update.",
+            "property_order": 130,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: notificationsEnabled"
+            }
+        },
+        "popoverFooter": {
+            "title": "Restart Warning",
+            "description": "Warning at the bottom of the popover. Supports Markdown links: [text](https://example.com)",
+            "property_order": 140,
+            "type": "string",
+            "default": "",
+            "options": {
+                "infoText": "Key name: popoverFooter"
+            }
+        },
+        "popoverTitle": {
+            "title": "Popover Title",
+            "description": "Title shown at the top of the popover.",
+            "property_order": 150,
+            "type": "string",
+            "default": "macOS Update",
+            "options": {
+                "infoText": "Key name: popoverTitle"
+            }
+        },
+        "popoverUpToDateMessage": {
+            "title": "Up to Date Message",
+            "description": "Message displayed in the popover when the Mac is up to date.",
+            "property_order": 160,
+            "type": "string",
+            "default": "Your Mac is up to date.",
+            "options": {
+                "infoText": "Key name: popoverUpToDateMessage"
+            }
+        },
+        "popoverUpdateButton": {
+            "title": "Update Now Button Label",
+            "description": "Label of the button that takes the user to Software Update.",
+            "property_order": 170,
+            "type": "string",
+            "default": "Open Software Update",
+            "options": {
+                "infoText": "Key name: popoverUpdateButton"
+            }
+        },
+        "popupBody": {
+            "title": "Scheduler Popup Message",
+            "description": "Message of the Scheduler popup. Supports $VERSION, $DATE and $COUNTDOWN variables.",
+            "property_order": 180,
+            "type": "string",
+            "default": "An update to macOS $VERSION has been scheduled for $DATE.",
+            "options": {
+                "infoText": "Key name: popupBody"
+            }
+        },
+        "popupCal1MondayHours": {
+            "title": "Suggested Hours Monday",
+            "description": "Hours suggested on Monday, comma-separated from 0 to 23. 12,17 suggests 12h00 and 17h00.",
+            "property_order": 190,
+            "type": "string",
+            "default": "12,17",
+            "options": {
+                "infoText": "Key name: popupCal1MondayHours"
+            }
+        },
+        "popupCal2TuesdayHours": {
+            "title": "Suggested Hours Tuesday",
+            "description": "Hours suggested on Tuesday, comma-separated from 0 to 23. 12,17 suggests 12h00 and 17h00.",
+            "property_order": 200,
+            "type": "string",
+            "default": "12,17",
+            "options": {
+                "infoText": "Key name: popupCal2TuesdayHours"
+            }
+        },
+        "popupCal3WednesdayHours": {
+            "title": "Suggested Hours Wednesday",
+            "description": "Hours suggested on Wednesday, comma-separated from 0 to 23. 12,17 suggests 12h00 and 17h00.",
+            "property_order": 210,
+            "type": "string",
+            "default": "12,17",
+            "options": {
+                "infoText": "Key name: popupCal3WednesdayHours"
+            }
+        },
+        "popupCal4ThursdayHours": {
+            "title": "Suggested Hours Thursday",
+            "description": "Hours suggested on Thursday, comma-separated from 0 to 23. 12,17 suggests 12h00 and 17h00.",
+            "property_order": 220,
+            "type": "string",
+            "default": "12,17",
+            "options": {
+                "infoText": "Key name: popupCal4ThursdayHours"
+            }
+        },
+        "popupCal5FridayHours": {
+            "title": "Suggested Hours Friday",
+            "description": "Hours suggested on Friday, comma-separated from 0 to 23. 12,17 suggests 12h00 and 17h00.",
+            "property_order": 230,
+            "type": "string",
+            "default": "12,17",
+            "options": {
+                "infoText": "Key name: popupCal5FridayHours"
+            }
+        },
+        "popupCal6SaturdayHours": {
+            "title": "Suggested Hours Saturday",
+            "description": "Hours suggested on Saturday, comma-separated from 0 to 23.",
+            "property_order": 240,
+            "type": "string",
+            "default": "",
+            "options": {
+                "infoText": "Key name: popupCal6SaturdayHours"
+            }
+        },
+        "popupCal7SundayHours": {
+            "title": "Suggested Hours Sunday",
+            "description": "Hours suggested on Sunday, comma-separated from 0 to 23.",
+            "property_order": 250,
+            "type": "string",
+            "default": "",
+            "options": {
+                "infoText": "Key name: popupCal7SundayHours"
+            }
+        },
+        "popupEnabled": {
+            "title": "Enable Popup Reminders",
+            "description": "Show the popup reminder at the start of each allowed hour.",
+            "property_order": 260,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: popupEnabled"
+            }
+        },
+        "popupRescheduleButton": {
+            "title": "Scheduler Reschedule Button",
+            "description": "Label of button that opens the Scheduler window.",
+            "property_order": 270,
+            "type": "string",
+            "default": "Remind Me",
+            "options": {
+                "infoText": "Key name: popupRescheduleButton"
+            }
+        },
+        "popupSchedulerHelp": {
+            "title": "Scheduler Help Text",
+            "description": "Instructions shown above the grid in the Scheduler window.",
+            "property_order": 280,
+            "type": "string",
+            "default": "Please select the times you are available to update your Mac.\nYou will get one popup reminder per selected hour.",
+            "options": {
+                "infoText": "Key name: popupSchedulerHelp"
+            }
+        },
+        "popupThresholdDays": {
+            "title": "Popup Reminder Threshold (days)",
+            "description": "Days remaining before the update deadline at which the Scheduler popup starts showing.",
+            "property_order": 290,
+            "type": "integer",
+            "default": 2,
+            "minimum": 0,
+            "options": {
+                "infoText": "Key name: popupThresholdDays"
+            }
+        },
+        "popupTitle": {
+            "title": "Scheduler Popup Title",
+            "description": "Title of the popup reminder.",
+            "property_order": 300,
+            "type": "string",
+            "default": "macOS Update",
+            "options": {
+                "infoText": "Key name: popupTitle"
+            }
+        },
+        "popupUpdateButton": {
+            "title": "Scheduler Update Now Button",
+            "description": "Label of the popup update button, opens Software Update.",
+            "property_order": 310,
+            "type": "string",
+            "default": "Update Now",
+            "options": {
+                "infoText": "Key name: popupUpdateButton"
+            }
+        },
+        "showDockIcon": {
+            "title": "Show Dock Icon",
+            "description": "Show the SUMB icon in the Dock when an update is available.",
+            "property_order": 320,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: showDockIcon"
+            }
+        }
+    }
+}
