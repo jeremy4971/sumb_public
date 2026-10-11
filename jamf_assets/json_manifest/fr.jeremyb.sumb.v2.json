@@ -96,7 +96,7 @@
         },
         "notificationSound": {
             "title": "Alert Sound",
-            "description": "Alert sound, played with the notification and the Scheduler popup. Type only the filename with its extension, not the full path. Leave empty for the system default tone. Only files located in /System/Library/Sounds are supported (e.g., Blow.aiff Sosumi.aiff Morse.aiff).",
+            "description": "Alert sound, played with the notification and the popup reminder. Type only the filename with its extension, not the full path. Leave empty for the system default tone. Only files located in /System/Library/Sounds are supported (e.g., Blow.aiff Sosumi.aiff Morse.aiff).",
             "property_order": 100,
             "type": "string",
             "default": "",
@@ -179,7 +179,7 @@
         },
         "popupBody": {
             "title": "Scheduler Popup Message",
-            "description": "Message of the Scheduler popup. Supports $VERSION, $DATE and $COUNTDOWN variables.",
+            "description": "Message of the popup reminder. Supports $VERSION, $DATE and $COUNTDOWN variables.",
             "property_order": 180,
             "type": "string",
             "default": "An update to macOS $VERSION has been scheduled for $DATE.",
@@ -289,7 +289,7 @@
         },
         "popupThresholdDays": {
             "title": "Popup Reminder Threshold (days)",
-            "description": "Days remaining before the update deadline at which the Scheduler popup starts showing.",
+            "description": "Days remaining before the update deadline at which the popup reminder starts showing.",
             "property_order": 290,
             "type": "integer",
             "default": 2,
