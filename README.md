@@ -10,7 +10,7 @@ Designed for Declarative Device Management (DDM), SUMB gives IT admins complete 
 
 ## Screenshots
 
-<p align="center">
+<p align="left">
   <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-v2.png" width="45%">
   <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/notif-v2.png" width="45%">
   <br>
