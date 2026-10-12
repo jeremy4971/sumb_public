@@ -2,40 +2,69 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>disableContextMenuActions</key>
-	<false/>
-	<key>dotBlinkingDays</key>
-	<integer>0</integer>
 	<key>hideIconWhenUpToDate</key>
+	<false/>
+	<key>hideSettings</key>
 	<false/>
 	<key>ignoreAppleUpdateChannel</key>
 	<false/>
-	<key>localizedDayPrefix</key>
+	<key>menubarDotBlinkingThresholdDays</key>
+	<integer>2</integer>
+	<key>menubarPrefix</key>
 	<string></string>
-	<key>localizedDaySuffix</key>
-	<string>d</string>
-	<key>localizedPopoverTitle</key>
-	<string>macOS Update</string>
-	<key>localizedRestartWarning</key>
-	<string>Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)</string>
-	<key>localizedUpToDateMessage</key>
-	<string>Your Mac is up to date.</string>
-	<key>localizedUpdateNowButton</key>
-	<string>Open Software Update</string>
-	<key>localizedUpdatingMenuBar</key>
+	<key>menubarPreparingMessage</key>
 	<string>Preparing update...</string>
+	<key>menubarSuffix</key>
+	<string>d</string>
+	<key>notificationBody</key>
+	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+	<key>notificationIntervalMinutes</key>
+	<integer>120</integer>
 	<key>notificationSound</key>
 	<string></string>
-	<key>notificationsEnabled</key>
-	<true/>
-	<key>reminderIntervalMinutes</key>
-	<integer>120</integer>
-	<key>reminderNotificationBody</key>
-	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
-	<key>reminderNotificationTitle</key>
+	<key>notificationThresholdDays</key>
+	<integer>4</integer>
+	<key>notificationTitle</key>
 	<string>Managed Update</string>
-	<key>reminderThresholdDays</key>
+	<key>notificationsEnabled</key>
+	<false/>
+	<key>popoverFooter</key>
+	<string></string>
+	<key>popoverTitle</key>
+	<string>macOS Update</string>
+	<key>popoverUpToDateMessage</key>
+	<string>Your Mac is up to date.</string>
+	<key>popoverUpdateButton</key>
+	<string>Open Software Update</string>
+	<key>popupBody</key>
+	<string>An update to macOS $VERSION has been scheduled for $DATE.</string>
+	<key>popupCal1MondayHours</key>
+	<string>12,17</string>
+	<key>popupCal2TuesdayHours</key>
+	<string>12,17</string>
+	<key>popupCal3WednesdayHours</key>
+	<string>12,17</string>
+	<key>popupCal4ThursdayHours</key>
+	<string>12,17</string>
+	<key>popupCal5FridayHours</key>
+	<string>12,17</string>
+	<key>popupCal6SaturdayHours</key>
+	<string></string>
+	<key>popupCal7SundayHours</key>
+	<string></string>
+	<key>popupEnabled</key>
+	<false/>
+	<key>popupRescheduleButton</key>
+	<string>Remind Me</string>
+	<key>popupSchedulerHelp</key>
+	<string>Please select the times you are available to update your Mac.
+You will get one popup reminder per selected hour.</string>
+	<key>popupThresholdDays</key>
 	<integer>2</integer>
+	<key>popupTitle</key>
+	<string>macOS Update</string>
+	<key>popupUpdateButton</key>
+	<string>Update Now</string>
 	<key>showDockIcon</key>
 	<false/>
 </dict>
