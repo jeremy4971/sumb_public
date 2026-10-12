@@ -3,31 +3,24 @@
 ## SUMB · Software Update Menu Bar
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/jeremy4971/sumb_public/total?color=978A89)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-fully%20customizable-A79C9B)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/privacy-%20no%20telemetry-758498)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-practices) [![Github](https://img.shields.io/badge/security-signed%20%20%C2%B7%20notarized-8796A8)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-practices) [![Github](https://img.shields.io/badge/codeql%20%20%C2%B7%20fable-passing-5E707F)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-practices)
 
-
-SUMB is a companion app for scheduled macOS updates via Declarative Device Management (DDM). Featuring a live menu bar countdown, it gives end users continuous, subtle visibility so they can plan their reboot on their own terms, avoiding abrupt disruptions during critical tasks or meetings.
+Designed for Declarative Device Management (DDM), SUMB gives IT admins complete control over macOS update reminders. Mix any combination of menu bar countdowns, native notifications, dock icon, and scheduled popups to suit your organization. By keeping users informed without getting in the way, SUMB lets employees plan reboots on their own terms.
 
 [<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/github-download-button-white.png" width="250" height="81">](https://github.com/jeremy4971/sumb_public/releases) [<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/github-macadmins-button-white.png" width="250" height="81">](https://macadmins.slack.com/archives/C05JSCXQQ5T) 
 
 
 ## Screenshots
 
-<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/home1.png" width="646" alt="5 days left">
-
-<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/home2.png" width="646" alt="Custom notification">
-
-<img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/home3.png" width="646" alt="Up to date">
-
-![General option](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/settings-x2.png)
+<p align="center">
+  <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popover-v2.png" width="45%">
+  <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/notif-v2.png" width="45%">
+  <br>
+  <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/dock-v2.png" width="45%">
+  <img src="https://github.com/jeremy4971/sumb_public/blob/main/screenshots/popup-v2.png" width="45%">
+</p>
 
 
 ## Quick start
 
-
-### Install script
-    curl -fsSL https://raw.githubusercontent.com/jeremy4971/sumb_public/HEAD/install.sh | bash
-
-
-### Manual download
 [Download](https://github.com/jeremy4971/sumb_public/releases) and install the .pkg, no configuration needed. Once a scheduled DDM update is deployed from your MDM, the menu bar icon will display the time remaining.
 > Requires macOS 15.0 or later.
 
