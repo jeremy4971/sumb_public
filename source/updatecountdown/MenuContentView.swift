@@ -3,7 +3,7 @@
 //  updatecountdown
 //
 //  What you see when clicking the menu bar icon: the update deadline, the
-//  restart warning and the Update Now button.
+//  restart warning, the Scheduler and Update Now buttons.
 //
 
 import SwiftUI
@@ -11,10 +11,11 @@ import SwiftUI
 struct MenuContentView: View {
     @ObservedObject var monitor: UpdateMonitor
     let onUpdateNow: () -> Void
+    let onScheduler: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(monitor.localizedPopoverTitle)
+        PopoverStack(spacing: 10) {
+            Text(monitor.popoverTitle)
                 .font(.headline)
 
             Divider()
@@ -27,7 +28,7 @@ struct MenuContentView: View {
                         .frame(width: 36, height: 36)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(monitor.localizedUpToDateMessage)
+                        Text(monitor.popoverUpToDateMessage)
                             .fontWeight(.medium)
                         Text("macOS \(UpdateMonitor.currentOSVersionString())")
                             .font(.caption)
@@ -52,20 +53,19 @@ struct MenuContentView: View {
                             .lineLimit(1)
                             .fixedSize(horizontal: true, vertical: false)
                     }
-
-                    Spacer()
-
-                    Button(monitor.localizedUpdateNowButton) {
-                        openSoftwareUpdate()
-                    }
                 }
 
-                Divider()
+                actionButtons
 
-                Text(restartWarningAttributedString)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(2)
+                if !monitor.popoverFooter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Divider()
+
+                    Text(restartWarningAttributedString)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(2)
+                        .layoutValue(key: WrapsToWidth.self, value: true)
+                }
             } else if let version = monitor.recommendedOSVersion, let bundle = monitor.recommendedUpdateBuild {
                 // Apple's catalog has something newer, but no MDM deadline.
                 // No restart warning here since nothing is being enforced.
@@ -84,19 +84,13 @@ struct MenuContentView: View {
                             .lineLimit(1)
                             .fixedSize(horizontal: true, vertical: false)
                     }
-
-                    Spacer()
-
-                    Button(monitor.localizedUpdateNowButton) {
-                        openSoftwareUpdate()
-                    }
                 }
+
+                actionButtons
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        // 280 fits the compact "up to date" layout. Longer content grows it.
-        .frame(minWidth: 280, alignment: .leading)
     }
 
     // MARK: - Restart warning
@@ -104,53 +98,11 @@ struct MenuContentView: View {
     // Parsed as inline Markdown so admins can put a [text](url) link in the
     // string. Falls back to the raw text if it doesn't parse.
     private var restartWarningAttributedString: AttributedString {
-        let wrapped = Self.wordWrapped(monitor.localizedRestartWarning, maxLineLength: 90)
+        let text = monitor.popoverFooter
         return (try? AttributedString(
-            markdown: wrapped,
+            markdown: text,
             options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(wrapped)
-    }
-
-    // Greedy word wrap. A whole [text](url) counts as one token, measured by
-    // its visible label length.
-    private static func wordWrapped(_ text: String, maxLineLength: Int) -> String {
-        var words: [(token: Substring, weight: Int)] = []
-        var i = text.startIndex
-        while i < text.endIndex {
-            while i < text.endIndex, text[i] == " " { i = text.index(after: i) }
-            guard i < text.endIndex else { break }
-            var end = text[i...].firstIndex(of: " ") ?? text.endIndex
-            var weight = text.distance(from: i, to: end)
-            if text[i] == "[",
-               let closeBracket = text[i...].firstIndex(of: "]"),
-               text.index(after: closeBracket) < text.endIndex,
-               text[text.index(after: closeBracket)] == "(",
-               let closeParen = text[closeBracket...].firstIndex(of: ")") {
-                end = text.index(after: closeParen)
-                weight = text.distance(from: text.index(after: i), to: closeBracket)
-            }
-            words.append((text[i..<end], weight))
-            i = end
-        }
-
-        var lines: [String] = []
-        var current = ""
-        var currentWeight = 0
-        for (token, weight) in words {
-            if current.isEmpty {
-                current = String(token)
-                currentWeight = weight
-            } else if currentWeight + 1 + weight <= maxLineLength {
-                current += " " + token
-                currentWeight += 1 + weight
-            } else {
-                lines.append(current)
-                current = String(token)
-                currentWeight = weight
-            }
-        }
-        if !current.isEmpty { lines.append(current) }
-        return lines.joined(separator: "\n")
+        )) ?? AttributedString(text)
     }
 
     // MARK: - Artwork
@@ -166,8 +118,74 @@ struct MenuContentView: View {
 
     // MARK: - Actions
 
+    // Under the version block, the update button fills the row.
+    private var actionButtons: some View {
+        HStack(spacing: 8) {
+            schedulerButton
+            updateButton
+        }
+    }
+
+    // Opens the user's Scheduler. Hidden when popup reminders are off.
+    @ViewBuilder
+    private var schedulerButton: some View {
+        if monitor.popupEnabled {
+            Button(action: onScheduler) {
+                Image(systemName: "calendar")
+            }
+            .accessibilityLabel("Scheduler")
+        }
+    }
+
+    private var updateButton: some View {
+        Button {
+            openSoftwareUpdate()
+        } label: {
+            Text(monitor.popoverUpdateButton)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
     private func openSoftwareUpdate() {
         NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
         onUpdateNow()
     }
+}
+
+// MARK: - Layout
+
+// VStack sized by its content, except views marked WrapsToWidth that wrap
+// to that width. A plain Text would stretch the popover to its one-line width.
+private struct PopoverStack: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = width(for: proposal, subviews: subviews)
+        let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }
+        let gaps = spacing * CGFloat(max(subviews.count - 1, 0))
+        return CGSize(width: width, height: heights.reduce(0, +) + gaps)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for subview in subviews {
+            let height = subview.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil)).height
+            subview.place(at: CGPoint(x: bounds.minX, y: y),
+                          proposal: ProposedViewSize(width: bounds.width, height: height))
+            y += height + spacing
+        }
+    }
+
+    private func width(for proposal: ProposedViewSize, subviews: Subviews) -> CGFloat {
+        if let width = proposal.width, width.isFinite { return width }
+        return subviews
+            .filter { !$0[WrapsToWidth.self] }
+            .map { $0.sizeThatFits(.unspecified).width }
+            .max() ?? 0
+    }
+}
+
+private nonisolated struct WrapsToWidth: LayoutValueKey {
+    static let defaultValue = false
 }

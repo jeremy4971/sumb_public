@@ -17,6 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E9E0233930065A610042D41C"
                BuildableName = "SUMB.app"
+               BlueprintName = "SUMB"
                ReferencedContainer = "container:updatecountdown.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,6 +47,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E9E0233930065A610042D41C"
             BuildableName = "SUMB.app"
+            BlueprintName = "SUMB"
             ReferencedContainer = "container:updatecountdown.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,6 +64,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E9E0233930065A610042D41C"
             BuildableName = "SUMB.app"
+            BlueprintName = "SUMB"
             ReferencedContainer = "container:updatecountdown.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

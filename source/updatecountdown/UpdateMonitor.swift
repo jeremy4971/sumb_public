@@ -9,6 +9,7 @@
 import Foundation
 import Combine
 import UserNotifications
+import AppKit
 
 @MainActor
 final class UpdateMonitor: ObservableObject {
@@ -31,36 +32,59 @@ final class UpdateMonitor: ObservableObject {
         static let demoOSVersion = "demoOSVersion"
         static let hideIconWhenUpToDate = "hideIconWhenUpToDate"
         static let showDockIcon = "showDockIcon"
-        static let dotBlinkingDays = "dotBlinkingDays"
+        static let menubarDotBlinkingThresholdDays = "menubarDotBlinkingThresholdDays"
         static let hideNotch = "hideNotch"
         static let ignoreAppleUpdateChannel = "ignoreAppleUpdateChannel"
         static let notificationsEnabled = "notificationsEnabled"
-        static let reminderThresholdDays = "reminderThresholdDays"
-        static let reminderIntervalMinutes = "reminderIntervalMinutes"
-        static let reminderNotificationTitle = "reminderNotificationTitle"
-        static let reminderNotificationBody = "reminderNotificationBody"
+        static let notificationThresholdDays = "notificationThresholdDays"
+        static let notificationIntervalMinutes = "notificationIntervalMinutes"
+        static let notificationTitle = "notificationTitle"
+        static let notificationBody = "notificationBody"
         static let notificationSound = "notificationSound"
-        static let localizedPopoverTitle = "localizedPopoverTitle"
-        static let localizedUpdateNowButton = "localizedUpdateNowButton"
-        static let localizedRestartWarning = "localizedRestartWarning"
-        static let localizedUpToDateMessage = "localizedUpToDateMessage"
-        static let localizedUpdatingMenuBar = "localizedUpdatingMenuBar"
-        static let localizedDayPrefix = "localizedDayPrefix"
-        static let localizedDaySuffix = "localizedDaySuffix"
+        static let popupEnabled = "popupEnabled"
+        static let popupThresholdDays = "popupThresholdDays"
+        static let popoverTitle = "popoverTitle"
+        static let popoverUpdateButton = "popoverUpdateButton"
+        static let popoverFooter = "popoverFooter"
+        static let popoverUpToDateMessage = "popoverUpToDateMessage"
+        static let menubarPreparingMessage = "menubarPreparingMessage"
+        static let menubarPrefix = "menubarPrefix"
+        static let menubarSuffix = "menubarSuffix"
+        static let popupSchedulerHelp = "popupSchedulerHelp"
+        static let popupTitle = "popupTitle"
+        static let popupBody = "popupBody"
+        static let popupRescheduleButton = "popupRescheduleButton"
+        static let popupUpdateButton = "popupUpdateButton"
+        // Suggested hours per day, "0,1,2,3". A profile can set and lock them.
+        static let popupCal1MondayHours = "popupCal1MondayHours"
+        static let popupCal2TuesdayHours = "popupCal2TuesdayHours"
+        static let popupCal3WednesdayHours = "popupCal3WednesdayHours"
+        static let popupCal4ThursdayHours = "popupCal4ThursdayHours"
+        static let popupCal5FridayHours = "popupCal5FridayHours"
+        static let popupCal6SaturdayHours = "popupCal6SaturdayHours"
+        static let popupCal7SundayHours = "popupCal7SundayHours"
+        static let scheduleDays = [
+            popupCal1MondayHours, popupCal2TuesdayHours, popupCal3WednesdayHours, popupCal4ThursdayHours,
+            popupCal5FridayHours, popupCal6SaturdayHours, popupCal7SundayHours,
+        ]
+        // The user's own schedule from the Scheduler window, so not in Keys.all.
+        static let schedulerHours = "schedulerHours"
         // Backs the "Hide settings" toggle. A profile can lock it.
-        static let disableContextMenuActions = "disableContextMenuActions"
+        static let hideSettings = "hideSettings"
 
         // hideNotch is missing on purpose, see the property below.
         static let all: [String] = [
-            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate, showDockIcon, dotBlinkingDays,
+            demoMode, demoDate, demoOSVersion, hideIconWhenUpToDate, showDockIcon, menubarDotBlinkingThresholdDays,
             ignoreAppleUpdateChannel,
-            notificationsEnabled, reminderThresholdDays, reminderIntervalMinutes,
-            reminderNotificationTitle, reminderNotificationBody, notificationSound,
-            localizedPopoverTitle, localizedUpdateNowButton, localizedRestartWarning,
-            localizedUpToDateMessage, localizedUpdatingMenuBar,
-            localizedDayPrefix, localizedDaySuffix,
-            disableContextMenuActions,
-        ]
+            notificationsEnabled, notificationThresholdDays, notificationIntervalMinutes,
+            notificationTitle, notificationBody, notificationSound, popupEnabled, popupThresholdDays,
+            popoverTitle, popoverUpdateButton, popoverFooter,
+            popoverUpToDateMessage, menubarPreparingMessage,
+            menubarPrefix, menubarSuffix,
+            popupSchedulerHelp, popupTitle, popupBody,
+            popupRescheduleButton, popupUpdateButton,
+            hideSettings,
+        ] + scheduleDays
     }
 
     // The category itself is registered once at launch in AppDelegate, not on
@@ -73,7 +97,12 @@ final class UpdateMonitor: ObservableObject {
     // MARK: - Published state
 
     /// Text drawn to the right of the SF Symbol (nil = symbol only).
-    @Published private(set) var countdownText: String?
+    // Not @Published: the live countdown would re-render every SwiftUI view
+    // watching the monitor each second. Changes go out on countdownTextChanged.
+    private(set) var countdownText: String?
+
+    /// Fires after countdownText changes.
+    let countdownTextChanged = PassthroughSubject<Void, Never>()
 
     /// Seconds left while the live HH:mm:ss countdown shows, nil otherwise.
     /// Set together with countdownText, so it's always in step with it.
@@ -135,8 +164,8 @@ final class UpdateMonitor: ObservableObject {
     }
 
     /// Days before the deadline when the red badge dot starts blinking. 0 means never.
-    @Published var dotBlinkingDays: Int {
-        didSet { UserDefaults.standard.set(dotBlinkingDays, forKey: Keys.dotBlinkingDays) }
+    @Published var menubarDotBlinkingThresholdDays: Int {
+        didSet { UserDefaults.standard.set(menubarDotBlinkingThresholdDays, forKey: Keys.menubarDotBlinkingThresholdDays) }
     }
 
     // Experimental, and only meaningful on notched Macs. Kept out of Keys.all so
@@ -162,64 +191,148 @@ final class UpdateMonitor: ObservableObject {
         didSet { UserDefaults.standard.set(notificationsEnabled, forKey: Keys.notificationsEnabled) }
     }
 
-    @Published var reminderThresholdDays: Int {
-        didSet { UserDefaults.standard.set(reminderThresholdDays, forKey: Keys.reminderThresholdDays) }
+    @Published var notificationThresholdDays: Int {
+        didSet { UserDefaults.standard.set(notificationThresholdDays, forKey: Keys.notificationThresholdDays) }
     }
 
-    @Published var reminderIntervalMinutes: Int {
-        didSet { UserDefaults.standard.set(reminderIntervalMinutes, forKey: Keys.reminderIntervalMinutes) }
+    @Published var notificationIntervalMinutes: Int {
+        didSet { UserDefaults.standard.set(notificationIntervalMinutes, forKey: Keys.notificationIntervalMinutes) }
     }
 
-    @Published var reminderNotificationTitle: String {
-        didSet { UserDefaults.standard.set(reminderNotificationTitle, forKey: Keys.reminderNotificationTitle) }
+    @Published var notificationTitle: String {
+        didSet { UserDefaults.standard.set(notificationTitle, forKey: Keys.notificationTitle) }
     }
 
-    @Published var reminderNotificationBody: String {
-        didSet { UserDefaults.standard.set(reminderNotificationBody, forKey: Keys.reminderNotificationBody) }
+    @Published var notificationBody: String {
+        didSet { UserDefaults.standard.set(notificationBody, forKey: Keys.notificationBody) }
     }
 
-    /// A file name from /System/Library/Sounds, e.g. "Glass.aiff". Empty means
-    /// the system default sound.
+    /// A file name from /System/Library/Sounds, e.g. "Glass.aiff", for the
+    /// notification and the Scheduler popup. Empty means the system default.
     @Published var notificationSound: String {
         didSet { UserDefaults.standard.set(notificationSound, forKey: Keys.notificationSound) }
     }
 
+    // MARK: - Popup
+
+    // Only stops the timed popup, the test buttons still show it.
+    @Published var popupEnabled: Bool {
+        didSet { UserDefaults.standard.set(popupEnabled, forKey: Keys.popupEnabled) }
+    }
+
+    @Published var popupThresholdDays: Int {
+        didSet { UserDefaults.standard.set(popupThresholdDays, forKey: Keys.popupThresholdDays) }
+    }
+
     // MARK: - Localization
 
-    @Published var localizedPopoverTitle: String {
-        didSet { UserDefaults.standard.set(localizedPopoverTitle, forKey: Keys.localizedPopoverTitle) }
+    @Published var popoverTitle: String {
+        didSet { UserDefaults.standard.set(popoverTitle, forKey: Keys.popoverTitle) }
     }
 
-    @Published var localizedUpdateNowButton: String {
-        didSet { UserDefaults.standard.set(localizedUpdateNowButton, forKey: Keys.localizedUpdateNowButton) }
+    @Published var popoverUpdateButton: String {
+        didSet { UserDefaults.standard.set(popoverUpdateButton, forKey: Keys.popoverUpdateButton) }
     }
 
-    @Published var localizedRestartWarning: String {
-        didSet { UserDefaults.standard.set(localizedRestartWarning, forKey: Keys.localizedRestartWarning) }
+    @Published var popoverFooter: String {
+        didSet { UserDefaults.standard.set(popoverFooter, forKey: Keys.popoverFooter) }
     }
 
-    @Published var localizedUpToDateMessage: String {
-        didSet { UserDefaults.standard.set(localizedUpToDateMessage, forKey: Keys.localizedUpToDateMessage) }
+    @Published var popoverUpToDateMessage: String {
+        didSet { UserDefaults.standard.set(popoverUpToDateMessage, forKey: Keys.popoverUpToDateMessage) }
     }
 
-    @Published var localizedUpdatingMenuBar: String {
-        didSet { UserDefaults.standard.set(localizedUpdatingMenuBar, forKey: Keys.localizedUpdatingMenuBar) }
+    @Published var menubarPreparingMessage: String {
+        didSet { UserDefaults.standard.set(menubarPreparingMessage, forKey: Keys.menubarPreparingMessage) }
     }
 
     /// Goes before the day count, e.g. "D-" for "D-4". Empty by default.
-    @Published var localizedDayPrefix: String {
+    @Published var menubarPrefix: String {
         didSet {
-            UserDefaults.standard.set(localizedDayPrefix, forKey: Keys.localizedDayPrefix)
+            UserDefaults.standard.set(menubarPrefix, forKey: Keys.menubarPrefix)
             recomputeDisplay()
         }
     }
 
     /// Goes after the day count, e.g. "4d" or "4j".
-    @Published var localizedDaySuffix: String {
+    @Published var menubarSuffix: String {
         didSet {
-            UserDefaults.standard.set(localizedDaySuffix, forKey: Keys.localizedDaySuffix)
+            UserDefaults.standard.set(menubarSuffix, forKey: Keys.menubarSuffix)
             recomputeDisplay()
         }
+    }
+
+    // MARK: - Scheduler
+
+    @Published var popupSchedulerHelp: String {
+        didSet { UserDefaults.standard.set(popupSchedulerHelp, forKey: Keys.popupSchedulerHelp) }
+    }
+
+    @Published var popupTitle: String {
+        didSet { UserDefaults.standard.set(popupTitle, forKey: Keys.popupTitle) }
+    }
+
+    @Published var popupBody: String {
+        didSet { UserDefaults.standard.set(popupBody, forKey: Keys.popupBody) }
+    }
+
+    @Published var popupRescheduleButton: String {
+        didSet { UserDefaults.standard.set(popupRescheduleButton, forKey: Keys.popupRescheduleButton) }
+    }
+
+    @Published var popupUpdateButton: String {
+        didSet { UserDefaults.standard.set(popupUpdateButton, forKey: Keys.popupUpdateButton) }
+    }
+
+    // Schedules are one 24-bit mask per day, Monday first. Bit h is the hour starting at h:00.
+
+    /// Set in Settings or by a profile, stored as one "0,1,2,3" string per day.
+    @Published var suggestedSchedule: [Int] {
+        didSet {
+            for (key, mask) in zip(Keys.scheduleDays, suggestedSchedule) {
+                UserDefaults.standard.set(Self.hoursString(from: mask), forKey: key)
+            }
+        }
+    }
+
+    /// Painted in the Scheduler window. nil follows the suggested schedule.
+    @Published var userSchedule: [Int]? {
+        didSet {
+            if let userSchedule {
+                UserDefaults.standard.set(userSchedule, forKey: Keys.schedulerHours)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.schedulerHours)
+            }
+        }
+    }
+
+    var effectiveSchedule: [Int] {
+        userSchedule ?? suggestedSchedule
+    }
+
+    private static func loadUserSchedule() -> [Int]? {
+        let stored = UserDefaults.standard.array(forKey: Keys.schedulerHours) as? [Int]
+        return stored?.count == 7 ? stored : nil
+    }
+
+    // "0, 1,2,3" -> mask. Anything that isn't an hour from 0 to 23 is skipped.
+    private static func hoursMask(from string: String) -> Int {
+        string.split(separator: ",").reduce(0) { mask, part in
+            guard let hour = Int(part.trimmingCharacters(in: .whitespaces)), (0..<24).contains(hour) else { return mask }
+            return mask | (1 << hour)
+        }
+    }
+
+    static func hoursString(from mask: Int) -> String {
+        (0..<24).filter { mask & (1 << $0) != 0 }.map(String.init).joined(separator: ",")
+    }
+
+    func isSchedulerHourOn(at date: Date) -> Bool {
+        let calendar = Calendar.current
+        // Calendar weekdays start on Sunday (1), the grid on Monday.
+        let day = (calendar.component(.weekday, from: date) + 5) % 7
+        let hour = calendar.component(.hour, from: date)
+        return effectiveSchedule[day] & (1 << hour) != 0
     }
 
     // MARK: - Timers
@@ -227,6 +340,9 @@ final class UpdateMonitor: ObservableObject {
     // kqueue-backed, so nothing polls.
     private var fileWatchSource: DispatchSourceFileSystemObject?
     private var softwareUpdatePlistWatchSource: DispatchSourceFileSystemObject?
+    // A save takes several steps, so read once the file has settled.
+    private var plistReloadDebounceTimer: Timer?
+    private var softwareUpdatePlistReloadDebounceTimer: Timer?
     // Picks up a profile install/update/removal while running, not just at next
     // launch.
     private var managedPreferencesWatchSources: [DispatchSourceFileSystemObject] = []
@@ -243,23 +359,31 @@ final class UpdateMonitor: ObservableObject {
         let demoOSVersion: String
         let hideIconWhenUpToDate: Bool
         let showDockIcon: Bool
-        let dotBlinkingDays: Int
+        let menubarDotBlinkingThresholdDays: Int
         let hideNotch: Bool
         let ignoreAppleUpdateChannel: Bool
         let notificationsEnabled: Bool
-        let reminderThresholdDays: Int
-        let reminderIntervalMinutes: Int
-        let reminderNotificationTitle: String
-        let reminderNotificationBody: String
+        let notificationThresholdDays: Int
+        let notificationIntervalMinutes: Int
+        let notificationTitle: String
+        let notificationBody: String
         let notificationSound: String
-        let localizedPopoverTitle: String
-        let localizedUpdateNowButton: String
-        let localizedRestartWarning: String
-        let localizedUpToDateMessage: String
-        let localizedUpdatingMenuBar: String
-        let localizedDayPrefix: String
-        let localizedDaySuffix: String
-        let disableContextMenuActions: Bool
+        let popupEnabled: Bool
+        let popupThresholdDays: Int
+        let popoverTitle: String
+        let popoverUpdateButton: String
+        let popoverFooter: String
+        let popoverUpToDateMessage: String
+        let menubarPreparingMessage: String
+        let menubarPrefix: String
+        let menubarSuffix: String
+        let popupSchedulerHelp: String
+        let popupTitle: String
+        let popupBody: String
+        let popupRescheduleButton: String
+        let popupUpdateButton: String
+        let suggestedSchedule: [Int]
+        let hideSettings: Bool
     }
 
     private static func loadSettingsFromDefaults() -> LoadedSettings {
@@ -273,29 +397,43 @@ final class UpdateMonitor: ObservableObject {
                 ?? "27.9.0",
             hideIconWhenUpToDate: (defaults.object(forKey: Keys.hideIconWhenUpToDate) as? Bool) ?? false,
             showDockIcon: (defaults.object(forKey: Keys.showDockIcon) as? Bool) ?? false,
-            dotBlinkingDays: (defaults.object(forKey: Keys.dotBlinkingDays) as? Int) ?? 0,
+            menubarDotBlinkingThresholdDays: (defaults.object(forKey: Keys.menubarDotBlinkingThresholdDays) as? Int) ?? 2,
             hideNotch: (defaults.object(forKey: Keys.hideNotch) as? Bool) ?? NotchDisplay.isHidden(),
             ignoreAppleUpdateChannel: (defaults.object(forKey: Keys.ignoreAppleUpdateChannel) as? Bool) ?? false,
             notificationsEnabled: (defaults.object(forKey: Keys.notificationsEnabled) as? Bool) ?? false,
-            reminderThresholdDays: (defaults.object(forKey: Keys.reminderThresholdDays) as? Int) ?? 2,
-            reminderIntervalMinutes: (defaults.object(forKey: Keys.reminderIntervalMinutes) as? Int) ?? 120,
-            reminderNotificationTitle: (defaults.string(forKey: Keys.reminderNotificationTitle)) ?? "Managed Update",
-            reminderNotificationBody: (defaults.string(forKey: Keys.reminderNotificationBody))
+            notificationThresholdDays: (defaults.object(forKey: Keys.notificationThresholdDays) as? Int) ?? 4,
+            notificationIntervalMinutes: (defaults.object(forKey: Keys.notificationIntervalMinutes) as? Int) ?? 120,
+            notificationTitle: (defaults.string(forKey: Keys.notificationTitle)) ?? "Managed Update",
+            notificationBody: (defaults.string(forKey: Keys.notificationBody))
                 ?? "An update to macOS $VERSION has been scheduled for $DATE.",
             notificationSound: (defaults.string(forKey: Keys.notificationSound)) ?? "",
-            localizedPopoverTitle: (defaults.string(forKey: Keys.localizedPopoverTitle))
+            popupEnabled: (defaults.object(forKey: Keys.popupEnabled) as? Bool) ?? false,
+            popupThresholdDays: (defaults.object(forKey: Keys.popupThresholdDays) as? Int) ?? 2,
+            popoverTitle: (defaults.object(forKey: Keys.popoverTitle) as? String)
                 ?? "macOS Update",
-            localizedUpdateNowButton: (defaults.string(forKey: Keys.localizedUpdateNowButton))
+            popoverUpdateButton: (defaults.object(forKey: Keys.popoverUpdateButton) as? String)
                 ?? "Open Software Update",
-            localizedRestartWarning: (defaults.string(forKey: Keys.localizedRestartWarning))
-                ?? "Be aware that your Mac will automatically restart after the deadline. [Learn more...](https://support.apple.com/en-us/100100)",
-            localizedUpToDateMessage: (defaults.string(forKey: Keys.localizedUpToDateMessage))
+            popoverFooter: (defaults.object(forKey: Keys.popoverFooter) as? String) ?? "",
+            popoverUpToDateMessage: (defaults.object(forKey: Keys.popoverUpToDateMessage) as? String)
                 ?? "Your Mac is up to date.",
-            localizedUpdatingMenuBar: (defaults.string(forKey: Keys.localizedUpdatingMenuBar))
+            menubarPreparingMessage: (defaults.object(forKey: Keys.menubarPreparingMessage) as? String)
                 ?? "Preparing update...",
-            localizedDayPrefix: (defaults.string(forKey: Keys.localizedDayPrefix)) ?? "",
-            localizedDaySuffix: (defaults.string(forKey: Keys.localizedDaySuffix)) ?? "d",
-            disableContextMenuActions: defaults.bool(forKey: Keys.disableContextMenuActions)
+            menubarPrefix: (defaults.object(forKey: Keys.menubarPrefix) as? String) ?? "",
+            menubarSuffix: (defaults.object(forKey: Keys.menubarSuffix) as? String) ?? "d",
+            popupSchedulerHelp: (defaults.string(forKey: Keys.popupSchedulerHelp))
+                ?? "Please select the times you are available to update your Mac.\nYou will get one popup reminder per selected hour.",
+            popupTitle: (defaults.string(forKey: Keys.popupTitle))
+                ?? "macOS Update",
+            popupBody: (defaults.string(forKey: Keys.popupBody))
+                ?? "An update to macOS $VERSION has been scheduled for $DATE.",
+            popupRescheduleButton: (defaults.string(forKey: Keys.popupRescheduleButton)) ?? "Remind Me",
+            popupUpdateButton: (defaults.string(forKey: Keys.popupUpdateButton))
+                ?? "Update Now",
+            // Noon and 5 pm on weekdays by default.
+            suggestedSchedule: Keys.scheduleDays.enumerated().map { day, key in
+                hoursMask(from: defaults.string(forKey: key) ?? (day < 5 ? "12,17" : ""))
+            },
+            hideSettings: (defaults.object(forKey: Keys.hideSettings) as? Bool) ?? false
         )
     }
 
@@ -305,46 +443,68 @@ final class UpdateMonitor: ObservableObject {
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
         showDockIcon = loaded.showDockIcon
-        dotBlinkingDays = loaded.dotBlinkingDays
+        menubarDotBlinkingThresholdDays = loaded.menubarDotBlinkingThresholdDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
         notificationsEnabled = loaded.notificationsEnabled
-        reminderThresholdDays = loaded.reminderThresholdDays
-        reminderIntervalMinutes = loaded.reminderIntervalMinutes
-        reminderNotificationTitle = loaded.reminderNotificationTitle
-        reminderNotificationBody = loaded.reminderNotificationBody
+        notificationThresholdDays = loaded.notificationThresholdDays
+        notificationIntervalMinutes = loaded.notificationIntervalMinutes
+        notificationTitle = loaded.notificationTitle
+        notificationBody = loaded.notificationBody
         notificationSound = loaded.notificationSound
-        localizedPopoverTitle = loaded.localizedPopoverTitle
-        localizedUpdateNowButton = loaded.localizedUpdateNowButton
-        localizedRestartWarning = loaded.localizedRestartWarning
-        localizedUpToDateMessage = loaded.localizedUpToDateMessage
-        localizedUpdatingMenuBar = loaded.localizedUpdatingMenuBar
-        localizedDayPrefix = loaded.localizedDayPrefix
-        localizedDaySuffix = loaded.localizedDaySuffix
-        disableContextMenuActions = loaded.disableContextMenuActions
+        popupEnabled = loaded.popupEnabled
+        popupThresholdDays = loaded.popupThresholdDays
+        popoverTitle = loaded.popoverTitle
+        popoverUpdateButton = loaded.popoverUpdateButton
+        popoverFooter = loaded.popoverFooter
+        popoverUpToDateMessage = loaded.popoverUpToDateMessage
+        menubarPreparingMessage = loaded.menubarPreparingMessage
+        menubarPrefix = loaded.menubarPrefix
+        menubarSuffix = loaded.menubarSuffix
+        popupSchedulerHelp = loaded.popupSchedulerHelp
+        popupTitle = loaded.popupTitle
+        popupBody = loaded.popupBody
+        popupRescheduleButton = loaded.popupRescheduleButton
+        popupUpdateButton = loaded.popupUpdateButton
+        suggestedSchedule = loaded.suggestedSchedule
+        hideSettings = loaded.hideSettings
     }
 
     // Same format as configuration_profile/fr.jeremyb.sumb.plist. Demo keys
     // and hideNotch stay out: they're per-machine.
     func settingsPropertyListXML() -> String? {
         let settings: [String: Any] = [
-            Keys.disableContextMenuActions: disableContextMenuActions,
-            Keys.dotBlinkingDays: dotBlinkingDays,
+            Keys.hideSettings: hideSettings,
+            Keys.menubarDotBlinkingThresholdDays: menubarDotBlinkingThresholdDays,
             Keys.hideIconWhenUpToDate: hideIconWhenUpToDate,
             Keys.ignoreAppleUpdateChannel: ignoreAppleUpdateChannel,
-            Keys.localizedDayPrefix: localizedDayPrefix,
-            Keys.localizedDaySuffix: localizedDaySuffix,
-            Keys.localizedPopoverTitle: localizedPopoverTitle,
-            Keys.localizedRestartWarning: localizedRestartWarning,
-            Keys.localizedUpToDateMessage: localizedUpToDateMessage,
-            Keys.localizedUpdateNowButton: localizedUpdateNowButton,
-            Keys.localizedUpdatingMenuBar: localizedUpdatingMenuBar,
+            Keys.menubarPrefix: menubarPrefix,
+            Keys.menubarSuffix: menubarSuffix,
+            Keys.popoverTitle: popoverTitle,
+            Keys.popoverFooter: popoverFooter,
+            Keys.popupSchedulerHelp: popupSchedulerHelp,
+            Keys.popupRescheduleButton: popupRescheduleButton,
+            Keys.popupBody: popupBody,
+            Keys.popupTitle: popupTitle,
+            Keys.popupUpdateButton: popupUpdateButton,
+            Keys.popupCal1MondayHours: Self.hoursString(from: suggestedSchedule[0]),
+            Keys.popupCal2TuesdayHours: Self.hoursString(from: suggestedSchedule[1]),
+            Keys.popupCal3WednesdayHours: Self.hoursString(from: suggestedSchedule[2]),
+            Keys.popupCal4ThursdayHours: Self.hoursString(from: suggestedSchedule[3]),
+            Keys.popupCal5FridayHours: Self.hoursString(from: suggestedSchedule[4]),
+            Keys.popupCal6SaturdayHours: Self.hoursString(from: suggestedSchedule[5]),
+            Keys.popupCal7SundayHours: Self.hoursString(from: suggestedSchedule[6]),
+            Keys.popoverUpToDateMessage: popoverUpToDateMessage,
+            Keys.popoverUpdateButton: popoverUpdateButton,
+            Keys.menubarPreparingMessage: menubarPreparingMessage,
             Keys.notificationSound: notificationSound,
             Keys.notificationsEnabled: notificationsEnabled,
-            Keys.reminderIntervalMinutes: reminderIntervalMinutes,
-            Keys.reminderNotificationBody: reminderNotificationBody,
-            Keys.reminderNotificationTitle: reminderNotificationTitle,
-            Keys.reminderThresholdDays: reminderThresholdDays,
+            Keys.popupEnabled: popupEnabled,
+            Keys.popupThresholdDays: popupThresholdDays,
+            Keys.notificationIntervalMinutes: notificationIntervalMinutes,
+            Keys.notificationBody: notificationBody,
+            Keys.notificationTitle: notificationTitle,
+            Keys.notificationThresholdDays: notificationThresholdDays,
             Keys.showDockIcon: showDockIcon,
         ]
         guard let data = try? PropertyListSerialization.data(fromPropertyList: settings, format: .xml, options: 0) else {
@@ -356,28 +516,37 @@ final class UpdateMonitor: ObservableObject {
     init() {
         managedKeys = Self.computeManagedKeys()
         let loaded = Self.loadSettingsFromDefaults()
-        disableContextMenuActions = loaded.disableContextMenuActions
+        hideSettings = loaded.hideSettings
         demoMode = loaded.demoMode
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
         hideIconWhenUpToDate = loaded.hideIconWhenUpToDate
         showDockIcon = loaded.showDockIcon
-        dotBlinkingDays = loaded.dotBlinkingDays
+        menubarDotBlinkingThresholdDays = loaded.menubarDotBlinkingThresholdDays
         hideNotch = loaded.hideNotch
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
         notificationsEnabled = loaded.notificationsEnabled
-        reminderThresholdDays = loaded.reminderThresholdDays
-        reminderIntervalMinutes = loaded.reminderIntervalMinutes
-        reminderNotificationTitle = loaded.reminderNotificationTitle
-        reminderNotificationBody = loaded.reminderNotificationBody
+        notificationThresholdDays = loaded.notificationThresholdDays
+        notificationIntervalMinutes = loaded.notificationIntervalMinutes
+        notificationTitle = loaded.notificationTitle
+        notificationBody = loaded.notificationBody
         notificationSound = loaded.notificationSound
-        localizedPopoverTitle = loaded.localizedPopoverTitle
-        localizedUpdateNowButton = loaded.localizedUpdateNowButton
-        localizedRestartWarning = loaded.localizedRestartWarning
-        localizedUpToDateMessage = loaded.localizedUpToDateMessage
-        localizedUpdatingMenuBar = loaded.localizedUpdatingMenuBar
-        localizedDayPrefix = loaded.localizedDayPrefix
-        localizedDaySuffix = loaded.localizedDaySuffix
+        popupEnabled = loaded.popupEnabled
+        popupThresholdDays = loaded.popupThresholdDays
+        popoverTitle = loaded.popoverTitle
+        popoverUpdateButton = loaded.popoverUpdateButton
+        popoverFooter = loaded.popoverFooter
+        popoverUpToDateMessage = loaded.popoverUpToDateMessage
+        menubarPreparingMessage = loaded.menubarPreparingMessage
+        menubarPrefix = loaded.menubarPrefix
+        menubarSuffix = loaded.menubarSuffix
+        popupSchedulerHelp = loaded.popupSchedulerHelp
+        popupTitle = loaded.popupTitle
+        popupBody = loaded.popupBody
+        popupRescheduleButton = loaded.popupRescheduleButton
+        popupUpdateButton = loaded.popupUpdateButton
+        suggestedSchedule = loaded.suggestedSchedule
+        userSchedule = Self.loadUserSchedule()
 
         reload()
         startWatchingPlist()
@@ -421,11 +590,11 @@ final class UpdateMonitor: ObservableObject {
     /// Used by both the automatic schedule and the "Send Test Notification"
     /// button in Options.
     func postReminderNotification() {
-        guard !reminderNotificationBody.isEmpty else { return }
+        guard !notificationBody.isEmpty else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = expandingVariables(in: reminderNotificationTitle)
-        content.body = expandingVariables(in: reminderNotificationBody)
+        content.title = expandingVariables(in: notificationTitle)
+        content.body = expandingVariables(in: notificationBody)
         // Most prominent level we can ask for. The user's per-app style in
         // System Settings still wins.
         content.interruptionLevel = .timeSensitive
@@ -438,11 +607,11 @@ final class UpdateMonitor: ObservableObject {
 
     /// One-shot, posted when the deadline passes.
     func postExpiredNotification() {
-        guard !localizedUpdatingMenuBar.isEmpty else { return }
+        guard !menubarPreparingMessage.isEmpty else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = expandingVariables(in: reminderNotificationTitle)
-        content.body = localizedUpdatingMenuBar
+        content.title = expandingVariables(in: notificationTitle)
+        content.body = menubarPreparingMessage
         content.interruptionLevel = .timeSensitive
         content.sound = notificationSoundForContent()
         content.categoryIdentifier = Self.reminderCategoryIdentifier
@@ -458,6 +627,18 @@ final class UpdateMonitor: ObservableObject {
         return UNNotificationSound(named: UNNotificationSoundName(notificationSound))
     }
 
+    // Same sound for the Scheduler popup. Empty or not found plays the
+    // system alert sound, like the notification's default.
+    func playAlertSound() {
+        let name = (notificationSound as NSString).deletingPathExtension
+        let sound = name.isEmpty ? nil : NSSound(named: name)
+        // Shared instance, play() fails while it's still playing.
+        sound?.stop()
+        if sound?.play() != true {
+            NSSound.beep()
+        }
+    }
+
     // Read from disk rather than hard-coded, since the list can change between
     // macOS releases.
     static let availableSystemSounds: [String] = {
@@ -465,15 +646,15 @@ final class UpdateMonitor: ObservableObject {
         return files.filter { $0.hasSuffix(".aiff") }.sorted()
     }()
 
-    // Fills in $DATE, $COUNTDOWN and $VERSION in the notification title and
-    // body so they don't have to be hard-coded into the localized text.
-    private func expandingVariables(in text: String) -> String {
+    // Fills in $DATE, $COUNTDOWN and $VERSION in the notification and popup
+    // texts. The popup can show with no deadline, hence the recommended version.
+    func expandingVariables(in text: String) -> String {
         var text = text
         if let target = targetDate {
             text = text.replacingOccurrences(of: "$DATE", with: Self.formattedDateTime(target))
             text = text.replacingOccurrences(of: "$COUNTDOWN", with: Self.notificationCountdown(until: target))
         }
-        if let version = targetOSVersion {
+        if let version = targetOSVersion ?? recommendedOSVersion {
             text = text.replacingOccurrences(of: "$VERSION", with: version)
         }
         return text
@@ -499,8 +680,12 @@ final class UpdateMonitor: ObservableObject {
     @Published private(set) var managedKeys: Set<String> = []
 
     private static func computeManagedKeys() -> Set<String> {
-        guard let bundleID = Bundle.main.bundleIdentifier else { return [] }
-        return Set(Keys.all.filter { CFPreferencesAppValueIsForced($0 as CFString, bundleID as CFString) })
+        Set(Keys.all.filter(isForced))
+    }
+
+    private static func isForced(_ key: String) -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
+        return CFPreferencesAppValueIsForced(key as CFString, bundleID as CFString)
     }
 
     // CFPreferencesAppSynchronize flushes our cached copy so the re-read picks
@@ -525,8 +710,8 @@ final class UpdateMonitor: ObservableObject {
 
     /// Hides "Settings…" from the right-click and Dock menus. Option-right-click
     /// or relaunching the app with the Dock icon hidden still gets you there.
-    @Published var disableContextMenuActions: Bool {
-        didSet { UserDefaults.standard.set(disableContextMenuActions, forKey: Keys.disableContextMenuActions) }
+    @Published var hideSettings: Bool {
+        didSet { UserDefaults.standard.set(hideSettings, forKey: Keys.hideSettings) }
     }
 
     // A profile can be scoped to one user or to the whole system, and the two
@@ -540,9 +725,6 @@ final class UpdateMonitor: ObservableObject {
     }
 
     private func startWatchingManagedPreferences() {
-        managedPreferencesWatchSources.forEach { $0.cancel() }
-        managedPreferencesWatchSources.removeAll()
-
         for path in Self.managedPreferencesPlistPaths {
             watchManagedPreferencesPlist(at: path)
         }
@@ -634,10 +816,13 @@ final class UpdateMonitor: ObservableObject {
             eventMask: [.write, .delete, .rename, .extend],
             queue: .main
         )
-        source.setEventHandler { [weak self] in
+        // Re-arm before reading, or the rest of a multi-step save goes unseen
+        // and a half-written file reads as "up to date".
+        source.setEventHandler { [weak self, weak source] in
             Task { @MainActor in
-                self?.reload()
+                guard let source, !source.isCancelled else { return }
                 self?.startWatchingPlist()
+                self?.schedulePlistReload()
             }
         }
         source.setCancelHandler {
@@ -654,11 +839,12 @@ final class UpdateMonitor: ObservableObject {
         guard fd >= 0 else { return }
 
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write], queue: .main)
-        source.setEventHandler { [weak self] in
+        source.setEventHandler { [weak self, weak source] in
             guard FileManager.default.fileExists(atPath: Self.plistPath) else { return }
             Task { @MainActor in
-                self?.reload()
+                guard let source, !source.isCancelled else { return }
                 self?.startWatchingPlist()
+                self?.schedulePlistReload()
             }
         }
         source.setCancelHandler {
@@ -666,6 +852,14 @@ final class UpdateMonitor: ObservableObject {
         }
         source.resume()
         fileWatchSource = source
+    }
+
+    // Each new event pushes the read back, so it happens 1s after the last one.
+    private func schedulePlistReload() {
+        plistReloadDebounceTimer?.invalidate()
+        plistReloadDebounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.reload() }
+        }
     }
 
     // MARK: - Software update plist watching
@@ -687,10 +881,11 @@ final class UpdateMonitor: ObservableObject {
             eventMask: [.write, .delete, .rename, .extend],
             queue: .main
         )
-        source.setEventHandler { [weak self] in
+        source.setEventHandler { [weak self, weak source] in
             Task { @MainActor in
-                self?.reloadRecommendedUpdate()
+                guard let source, !source.isCancelled else { return }
                 self?.startWatchingSoftwareUpdatePlist()
+                self?.scheduleSoftwareUpdatePlistReload()
             }
         }
         source.setCancelHandler {
@@ -706,11 +901,12 @@ final class UpdateMonitor: ObservableObject {
         guard fd >= 0 else { return }
 
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write], queue: .main)
-        source.setEventHandler { [weak self] in
+        source.setEventHandler { [weak self, weak source] in
             guard FileManager.default.fileExists(atPath: Self.softwareUpdatePlistPath) else { return }
             Task { @MainActor in
-                self?.reloadRecommendedUpdate()
+                guard let source, !source.isCancelled else { return }
                 self?.startWatchingSoftwareUpdatePlist()
+                self?.scheduleSoftwareUpdatePlistReload()
             }
         }
         source.setCancelHandler {
@@ -718,6 +914,13 @@ final class UpdateMonitor: ObservableObject {
         }
         source.resume()
         softwareUpdatePlistWatchSource = source
+    }
+
+    private func scheduleSoftwareUpdatePlistReload() {
+        softwareUpdatePlistReloadDebounceTimer?.invalidate()
+        softwareUpdatePlistReloadDebounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.reloadRecommendedUpdate() }
+        }
     }
 
     // MARK: - Display computation
@@ -758,7 +961,7 @@ final class UpdateMonitor: ObservableObject {
             // Days remaining, rounded up, wrapped in the configured prefix and
             // suffix: "4d", "4j", "D-4". Either can be empty.
             let days = Self.daysRemaining(remaining)
-            text = "\(localizedDayPrefix)\(days)\(localizedDaySuffix)"
+            text = "\(menubarPrefix)\(days)\(menubarSuffix)"
         }
 
         setDisplay(status: .scheduled, countdownText: text)
@@ -773,7 +976,10 @@ final class UpdateMonitor: ObservableObject {
     // assign on change so subscribers aren't woken on every tick.
     private func setDisplay(status newStatus: Status, countdownText newText: String?) {
         if status != newStatus { status = newStatus }
-        if countdownText != newText { countdownText = newText }
+        if countdownText != newText {
+            countdownText = newText
+            countdownTextChanged.send()
+        }
     }
 
     // Every second inside the urgent window so HH:mm:ss ticks live, every minute
@@ -811,7 +1017,7 @@ final class UpdateMonitor: ObservableObject {
 
     // Locale.autoupdatingCurrent is clamped to the languages this app
     // declares, so it ignores the system language. preferredLanguages isn't.
-    private static var preferredLocale: Locale {
+    static var preferredLocale: Locale {
         Locale.preferredLanguages.first.map(Locale.init(identifier:)) ?? .autoupdatingCurrent
     }
 
@@ -844,12 +1050,12 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Plist parsing
 
-    struct ScheduledUpdate {
+    private struct ScheduledUpdate {
         let date: Date
         let osVersion: String?
     }
 
-    static func readScheduledUpdate() -> ScheduledUpdate? {
+    private static func readScheduledUpdate() -> ScheduledUpdate? {
         guard let data = FileManager.default.contents(atPath: plistPath) else {
             return nil
         }
@@ -918,7 +1124,7 @@ final class UpdateMonitor: ObservableObject {
 
     /// The highest-versioned "macOS" entry in RecommendedUpdates, with its
     /// identifier.
-    static func readRecommendedMacOSUpdate() -> (version: String, identifier: String)? {
+    private static func readRecommendedMacOSUpdate() -> (version: String, identifier: String)? {
         guard let data = FileManager.default.contents(atPath: softwareUpdatePlistPath) else {
             return nil
         }

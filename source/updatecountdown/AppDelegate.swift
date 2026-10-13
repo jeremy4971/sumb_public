@@ -14,6 +14,7 @@ import UserNotifications
 final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, NSMenuItemValidation, NSWindowDelegate {
 
     let monitor = UpdateMonitor()
+    private lazy var scheduler = SchedulerController(monitor: monitor)
 
     private var statusItem: NSStatusItem?
 
@@ -67,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     // Same rule as the right-click menu: hidden under lockdown unless Option is held.
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
-        guard !monitor.disableContextMenuActions || NSEvent.modifierFlags.contains(.option) else { return nil }
+        guard !monitor.hideSettings || NSEvent.modifierFlags.contains(.option) else { return nil }
         let menu = NSMenu()
         let item = menu.addItem(withTitle: "Settings…", action: #selector(showOptionsWindow), keyEquivalent: "")
         item.target = self
@@ -101,6 +102,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             }
             .store(in: &cancellables)
 
+        // countdownText isn't @Published, so it has its own signal. It fires
+        // after the change, no need to defer.
+        monitor.countdownTextChanged
+            .sink { [weak self] in
+                self?.refreshStatusItem()
+                self?.refreshDockTile()
+            }
+            .store(in: &cancellables)
+
         dockTileView.frame = NSRect(origin: .zero, size: NSApp.dockTile.size)
         refreshStatusItem()
         updateDockVisibility()
@@ -113,11 +123,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             .sink { hidden in NotchDisplay.setHidden(hidden) }
             .store(in: &cancellables)
 
+        scheduler.onWindowsChanged = { [weak self] in self?.updateDockVisibility() }
+        scheduler.start()
+
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
         // Registered once at launch, and again only if the button label is edited.
-        monitor.$localizedUpdateNowButton
+        monitor.$popoverUpdateButton
             .receive(on: RunLoop.main)
             .sink { title in
                 let action = UNNotificationAction(
@@ -144,8 +157,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         Publishers.Merge5(
             monitor.$targetDate.map { _ in () },
-            monitor.$reminderThresholdDays.map { _ in () },
-            monitor.$reminderIntervalMinutes.map { _ in () },
+            monitor.$notificationThresholdDays.map { _ in () },
+            monitor.$notificationIntervalMinutes.map { _ in () },
             monitor.$notificationsEnabled.map { _ in () },
             monitor.$status.map { _ in () }
         )
@@ -240,7 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             showsRedBadge = true
         case .expired:
             // Deadline passed but macOS hasn't updated yet.
-            button.title = " \(monitor.localizedUpdatingMenuBar)"
+            button.title = " \(monitor.menubarPreparingMessage)"
             showsRedBadge = true
         case .none where monitor.recommendedOSVersion != nil:
             // No MDM deadline, but a newer macOS version is available.
@@ -263,7 +276,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Also blinks once the deadline has passed, but not for a newer version with
     // no deadline since there's nothing to count down to.
     private var shouldBlinkDot: Bool {
-        let days = monitor.dotBlinkingDays
+        let days = monitor.menubarDotBlinkingThresholdDays
         guard days > 0 else { return false }
         if monitor.status == .expired { return true }
         guard monitor.status == .scheduled, let target = monitor.targetDate else { return false }
@@ -325,6 +338,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Settings is open so it behaves like a normal app window.
     private func updateDockVisibility() {
         let showsDock = (monitor.showDockIcon && !isUpToDate) || optionsWindow != nil
+            || scheduler.isSchedulerWindowOpen
         let policy: NSApplication.ActivationPolicy = showsDock ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)
@@ -382,9 +396,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         // MenuContentView tracks `monitor` itself, so the cached view stays
         // current without being rebuilt.
-        let hostingView = NSHostingView(rootView: MenuContentView(monitor: monitor, onUpdateNow: { [weak self] in
-            self?.mainMenu?.cancelTracking()
-        }))
+        let hostingView = NSHostingView(rootView: MenuContentView(
+            monitor: monitor,
+            onUpdateNow: { [weak self] in
+                self?.mainMenu?.cancelTracking()
+            },
+            onScheduler: { [weak self] in
+                self?.mainMenu?.cancelTracking()
+                // Activation asked during menu tracking can be dropped, wait for it to close.
+                DispatchQueue.main.async { self?.scheduler.showSchedulerWindow() }
+            }
+        ))
         item.view = hostingView
         menu.addItem(item)
 
@@ -414,7 +436,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         // "Hide settings" hides the item rather than disabling it. Option brings
         // it back, so a technician can still get in.
-        if !monitor.disableContextMenuActions || optionHeld {
+        if !monitor.hideSettings || optionHeld {
             menu.addItem(withTitle: "Settings…", action: #selector(showOptionsWindow), keyEquivalent: "")
         }
 
@@ -432,6 +454,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
             // hideNotch can't be locked by a profile, so this ignores the lockdown too.
             menu.addItem(withTitle: "Toggle Notch", action: #selector(toggleNotch), keyEquivalent: "")
+
+            // Test trigger, shows the popup whatever the schedule or update state.
+            menu.addItem(withTitle: "Show popup reminder", action: #selector(showSchedulerPrompt), keyEquivalent: "")
         }
 
         // Under lockdown with Option up the menu is just "Quit", and a leading
@@ -476,6 +501,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         monitor.hideNotch.toggle()
     }
 
+    @objc private func showSchedulerPrompt() {
+        scheduler.showPrompt()
+    }
+
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
@@ -483,10 +512,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // MARK: - Options window
 
     // Measured, not computed: SwiftUI's reported fitting size for the
-    // Localization tab's Grid wasn't reliable.
-    private static let optionsWindowWidth: CGFloat = 440
-    private static let generalTabHeight: CGFloat = 590
-    private static let localizationTabHeight: CGFloat = 590
+    // Menubar tab's Grid wasn't reliable.
+    // One width for every tab, the Scheduler's hour grid needs it.
+    private static let optionsWindowWidth: CGFloat = 660
+    private static let generalTabHeight: CGFloat = 600
+    private static let menubarTabHeight: CGFloat = 550
+    private static let notificationTabHeight: CGFloat = 360
+    // Taller for the grid, the Form scrolls the rest.
+    private static let popupTabHeight: CGFloat = 650
     private static let aboutTabHeight: CGFloat = 260
 
     // Saved as "NSWindow Frame SUMBSettingsWindow" in defaults.
@@ -511,12 +544,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             generalItem.label = "General"
             generalItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
 
-            let localizationItem = NSTabViewItem(viewController: Self.makeHostingController(
-                rootView: LocalizationOptionsView(monitor: monitor),
-                height: Self.localizationTabHeight
+            let menubarItem = NSTabViewItem(viewController: Self.makeHostingController(
+                rootView: MenubarOptionsView(monitor: monitor),
+                height: Self.menubarTabHeight
             ))
-            localizationItem.label = "Localization"
-            localizationItem.image = NSImage(systemSymbolName: "translate", accessibilityDescription: nil)
+            menubarItem.label = "Menubar"
+            menubarItem.image = NSImage(systemSymbolName: "menubar.arrow.up.rectangle", accessibilityDescription: nil)
+
+            let notificationItem = NSTabViewItem(viewController: Self.makeHostingController(
+                rootView: NotificationOptionsView(monitor: monitor),
+                height: Self.notificationTabHeight
+            ))
+            notificationItem.label = "Notification"
+            notificationItem.image = NSImage(systemSymbolName: "bell.badge", accessibilityDescription: nil)
+
+            let popupItem = NSTabViewItem(viewController: Self.makeHostingController(
+                rootView: PopupOptionsView(monitor: monitor, onOpenUserSchedule: { [weak self] in
+                    self?.scheduler.showSchedulerWindow()
+                }, onSendTestPopup: { [weak self] in
+                    self?.scheduler.showPrompt()
+                }),
+                height: Self.popupTabHeight
+            ))
+            popupItem.label = "Popup"
+            popupItem.image = NSImage(systemSymbolName: "filemenu.and.cursorarrow", accessibilityDescription: nil)
 
             let aboutItem = NSTabViewItem(viewController: Self.makeHostingController(
                 rootView: AboutOptionsView(),
@@ -530,7 +581,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
             let tabViewController = OptionsTabViewController()
             tabViewController.tabStyle = .toolbar
-            tabViewController.tabViewItems = [generalItem, localizationItem, aboutItem]
+            tabViewController.tabViewItems = [generalItem, menubarItem, notificationItem, popupItem, aboutItem]
             // Reopen on the last tab, as the HIG suggests for settings windows.
             if tabViewController.tabViewItems.indices.contains(savedIndex) {
                 tabViewController.selectedTabViewItemIndex = savedIndex
@@ -560,7 +611,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         updateDockVisibility()
 
         // Activate first, or the window stays behind the frontmost app.
-        NSApp.activate()
+        // The old ignoringOtherApps call, NSApp.activate() alone can be refused.
+        NSApp.activate(ignoringOtherApps: true)
         if let window = optionsWindow {
             if window.isMiniaturized { window.deminiaturize(nil) }
             window.makeKeyAndOrderFront(nil)
@@ -613,13 +665,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             return
         }
 
-        let windowStart = TimeInterval(monitor.reminderThresholdDays) * 24 * 60 * 60
+        let windowStart = TimeInterval(monitor.notificationThresholdDays) * 24 * 60 * 60
 
         if remaining <= windowStart {
             let justEntered = !wasWithinReminderWindow
             wasWithinReminderWindow = true
 
-            let interval = TimeInterval(max(1, monitor.reminderIntervalMinutes) * 60)
+            let interval = TimeInterval(max(1, monitor.notificationIntervalMinutes) * 60)
             reminderTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.monitor.postReminderNotification() }
             }
