@@ -6,7 +6,7 @@ on:
 jobs:
   analyze:
     name: Analyze Swift
-    runs-on: xcode-26
+    runs-on: macos-26
     permissions:
       security-events: write
       contents: read
