@@ -1,0 +1,55 @@
+name: Claude Swift Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: "Optional extra focus (e.g. 'concurrency only', 'Sources/Installer')"
+        required: false
+        default: ""
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest # Claude only reads the code, no Xcode build needed
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            BRANCH: ${{ github.ref_name }}
+            EXTRA FOCUS: ${{ inputs.focus || 'none' }}
+
+            Audit the Swift code in this repository (a macOS app).
+            Use Glob/Grep to map the codebase, then read the important files.
+            If EXTRA FOCUS is set, prioritise it.
+
+            Look for:
+            - Correctness bugs and edge cases
+            - Swift concurrency: data races, missing @MainActor on UI code,
+              Sendable violations, actor reentrancy, unstructured Task leaks
+            - Memory: retain cycles in closures (missing [weak self]), leaks
+            - Force unwraps / try! / fatalError on paths that can realistically fail
+            - Error handling that swallows failures silently
+            - Security: shelling out via Process with untrusted input, file
+              permissions, Keychain usage, hardcoded secrets, privilege escalation
+            - Performance on the main thread (blocking I/O, heavy work in views)
+            - API misuse in AppKit / SwiftUI / Foundation
+            - Dead or duplicated code worth cleaning up
+
+            Create exactly ONE issue with `gh issue create` titled
+            "Claude Swift audit – <today's date>", grouping findings by severity
+            (HIGH / MEDIUM / LOW), each with file:line, the problem, and a
+            suggested fix. Skip style nitpicks a linter would catch.
+          claude_args: |
+            --model claude-opus-5-5
+            --effort high
+            --allowedTools "Read,Glob,Grep,Bash(gh issue create:*)"
