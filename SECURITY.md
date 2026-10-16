@@ -28,7 +28,7 @@ In addition, SUMB :
 * Does not collect or send any data.
 * Does not phone home.
 * Does not have a built-in auto-updater.
-* Does not require any PPPC permissions.
+* Does not require any macOS Security and Privacy permissions.
 * Does not display a donation button.
 * Does not display a link to a personal website.
 * Contains AI-generated code.
