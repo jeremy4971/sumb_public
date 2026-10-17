@@ -11,7 +11,7 @@ If you discover a security vulnerability in this project, please report it priva
 
 ## Security disclaimer
 
-SUMB reads these system files and sounds folder :
+SUMB requires read-only access to these locations :
 * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
 * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
 * `/System/Library/Sounds/`
