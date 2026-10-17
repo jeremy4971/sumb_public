@@ -15,10 +15,11 @@ enum BusyDetector {
         isMicrophoneInUse || isCameraInUse || isFullScreenAppShown
     }
 
-    // Input devices only, so music or our own alert sound doesn't count.
+    // Per process, so music on a headset (one device for mic and output) doesn't count.
     private static var isMicrophoneInUse: Bool {
-        audioDevices().contains { device in
-            hasInputStreams(device) && isRunningSomewhere(device)
+        let ownPID = getpid()
+        return audioProcesses().contains { process in
+            processPID(process) != ownPID && isRunningInput(process)
         }
     }
 
@@ -61,9 +62,9 @@ enum BusyDetector {
 
     // MARK: - Core Audio
 
-    private static func audioDevices() -> [AudioObjectID] {
+    private static func audioProcesses() -> [AudioObjectID] {
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDevices,
+            mSelector: kAudioHardwarePropertyProcessObjectList,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
@@ -71,30 +72,31 @@ enum BusyDetector {
         let system = AudioObjectID(kAudioObjectSystemObject)
         guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr else { return [] }
 
-        var devices = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
-        guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &devices) == noErr else { return [] }
-        return devices
+        var processes = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &processes) == noErr else { return [] }
+        return processes
     }
 
-    private static func hasInputStreams(_ device: AudioObjectID) -> Bool {
+    private static func processPID(_ process: AudioObjectID) -> pid_t {
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyStreams,
-            mScope: kAudioObjectPropertyScopeInput,
+            mSelector: kAudioProcessPropertyPID,
+            mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
-        var size: UInt32 = 0
-        return AudioObjectGetPropertyDataSize(device, &address, 0, nil, &size) == noErr && size > 0
+        var pid: pid_t = -1
+        var size = UInt32(MemoryLayout<pid_t>.size)
+        return AudioObjectGetPropertyData(process, &address, 0, nil, &size, &pid) == noErr ? pid : -1
     }
 
-    private static func isRunningSomewhere(_ device: AudioObjectID) -> Bool {
+    private static func isRunningInput(_ process: AudioObjectID) -> Bool {
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyDeviceIsRunningSomewhere,
+            mSelector: kAudioProcessPropertyIsRunningInput,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
         var running: UInt32 = 0
         var size = UInt32(MemoryLayout<UInt32>.size)
-        return AudioObjectGetPropertyData(device, &address, 0, nil, &size, &running) == noErr && running != 0
+        return AudioObjectGetPropertyData(process, &address, 0, nil, &size, &running) == noErr && running != 0
     }
 
     // MARK: - Core Media IO

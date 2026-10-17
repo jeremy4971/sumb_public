@@ -10,6 +10,7 @@ import Foundation
 import Combine
 import UserNotifications
 import AppKit
+import os
 
 @MainActor
 final class UpdateMonitor: ObservableObject {
@@ -19,6 +20,8 @@ final class UpdateMonitor: ObservableObject {
     // Apple's own update catalog. Separate from any MDM enforcement, so we can
     // still spot a newer macOS when nothing has been scheduled.
     static let softwareUpdatePlistPath = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
+
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "updatecountdown", category: "UpdateMonitor")
 
     // Below this, show a live HH:mm:ss countdown instead of a day count.
     private static let urgentThreshold: TimeInterval = 24 * 60 * 60
@@ -344,8 +347,8 @@ final class UpdateMonitor: ObservableObject {
     private var plistReloadDebounceTimer: Timer?
     private var softwareUpdatePlistReloadDebounceTimer: Timer?
     // Picks up a profile install/update/removal while running, not just at next
-    // launch.
-    private var managedPreferencesWatchSources: [DispatchSourceFileSystemObject] = []
+    // launch. KVO, so a missing Managed Preferences folder doesn't matter.
+    private var managedPreferencesObserver: ManagedPreferencesObserver?
     private var displayTimer: Timer?
     // An MDM push often writes the plist several times within a few seconds, so
     // reloadManagedPreferences() runs once, 5s after the last change.
@@ -398,7 +401,8 @@ final class UpdateMonitor: ObservableObject {
             hideIconWhenUpToDate: (defaults.object(forKey: Keys.hideIconWhenUpToDate) as? Bool) ?? false,
             showDockIcon: (defaults.object(forKey: Keys.showDockIcon) as? Bool) ?? false,
             menubarDotBlinkingThresholdDays: (defaults.object(forKey: Keys.menubarDotBlinkingThresholdDays) as? Int) ?? 2,
-            hideNotch: (defaults.object(forKey: Keys.hideNotch) as? Bool) ?? NotchDisplay.isHidden(),
+            // The screen wins over the stored value, so a manual resolution change sticks.
+            hideNotch: NotchDisplay.hasNotch() ? NotchDisplay.isHidden() : false,
             ignoreAppleUpdateChannel: (defaults.object(forKey: Keys.ignoreAppleUpdateChannel) as? Bool) ?? false,
             notificationsEnabled: (defaults.object(forKey: Keys.notificationsEnabled) as? Bool) ?? false,
             notificationThresholdDays: (defaults.object(forKey: Keys.notificationThresholdDays) as? Int) ?? 4,
@@ -514,7 +518,8 @@ final class UpdateMonitor: ObservableObject {
     }
 
     init() {
-        managedKeys = Self.computeManagedKeys()
+        managedSnapshot = Self.computeManagedSnapshot()
+        managedKeys = Set(managedSnapshot.keys)
         let loaded = Self.loadSettingsFromDefaults()
         hideSettings = loaded.hideSettings
         demoMode = loaded.demoMode
@@ -524,6 +529,8 @@ final class UpdateMonitor: ObservableObject {
         showDockIcon = loaded.showDockIcon
         menubarDotBlinkingThresholdDays = loaded.menubarDotBlinkingThresholdDays
         hideNotch = loaded.hideNotch
+        // didSet doesn't run in init, so sync the stored key by hand.
+        UserDefaults.standard.set(loaded.hideNotch, forKey: Keys.hideNotch)
         ignoreAppleUpdateChannel = loaded.ignoreAppleUpdateChannel
         notificationsEnabled = loaded.notificationsEnabled
         notificationThresholdDays = loaded.notificationThresholdDays
@@ -550,7 +557,9 @@ final class UpdateMonitor: ObservableObject {
 
         reload()
         startWatchingPlist()
-        startWatchingManagedPreferences()
+        managedPreferencesObserver = ManagedPreferencesObserver(keys: Keys.all) { [weak self] in
+            Task { @MainActor [weak self] in self?.scheduleManagedPreferencesChanged() }
+        }
         reloadRecommendedUpdate()
         startWatchingSoftwareUpdatePlist()
     }
@@ -595,24 +604,8 @@ final class UpdateMonitor: ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = expandingVariables(in: notificationTitle)
         content.body = expandingVariables(in: notificationBody)
-        // Most prominent level we can ask for. The user's per-app style in
-        // System Settings still wins.
-        content.interruptionLevel = .timeSensitive
-        content.sound = notificationSoundForContent()
-        content.categoryIdentifier = Self.reminderCategoryIdentifier
-
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    /// One-shot, posted when the deadline passes.
-    func postExpiredNotification() {
-        guard !menubarPreparingMessage.isEmpty else { return }
-
-        let content = UNMutableNotificationContent()
-        content.title = expandingVariables(in: notificationTitle)
-        content.body = menubarPreparingMessage
-        content.interruptionLevel = .timeSensitive
+        // .timeSensitive needs an entitlement we don't ship, so macOS would use .active anyway.
+        content.interruptionLevel = .active
         content.sound = notificationSoundForContent()
         content.categoryIdentifier = Self.reminderCategoryIdentifier
 
@@ -679,8 +672,17 @@ final class UpdateMonitor: ObservableObject {
     // CFPreferencesAppValueIsForced is a slow cross-process lookup.
     @Published private(set) var managedKeys: Set<String> = []
 
-    private static func computeManagedKeys() -> Set<String> {
-        Set(Keys.all.filter(isForced))
+    // Forced keys and their values. Our own saves fire KVO too, so this tells
+    // them apart from a real profile change.
+    private var managedSnapshot: [String: Any] = [:]
+
+    private static func computeManagedSnapshot() -> [String: Any] {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return [:] }
+        var snapshot: [String: Any] = [:]
+        for key in Keys.all where isForced(key) {
+            snapshot[key] = CFPreferencesCopyAppValue(key as CFString, bundleID as CFString) ?? NSNull()
+        }
+        return snapshot
     }
 
     private static func isForced(_ key: String) -> Bool {
@@ -689,12 +691,16 @@ final class UpdateMonitor: ObservableObject {
     }
 
     // CFPreferencesAppSynchronize flushes our cached copy so the re-read picks
-    // up what changed underneath us.
-    private func reloadManagedPreferences() {
+    // up what changed underneath us. Does nothing if no forced value changed.
+    func reloadManagedPreferences() {
         if let bundleID = Bundle.main.bundleIdentifier {
             CFPreferencesAppSynchronize(bundleID as CFString)
         }
-        managedKeys = Self.computeManagedKeys()
+        let snapshot = Self.computeManagedSnapshot()
+        guard !NSDictionary(dictionary: snapshot).isEqual(to: managedSnapshot) else { return }
+        managedSnapshot = snapshot
+        managedKeys = Set(snapshot.keys)
+        Self.log.info("Managed preferences changed, \(snapshot.count) forced keys")
         applySettings(Self.loadSettingsFromDefaults())
     }
 
@@ -714,86 +720,13 @@ final class UpdateMonitor: ObservableObject {
         didSet { UserDefaults.standard.set(hideSettings, forKey: Keys.hideSettings) }
     }
 
-    // A profile can be scoped to one user or to the whole system, and the two
-    // land in different places, so watch both.
-    private static var managedPreferencesPlistPaths: [String] {
-        guard let bundleID = Bundle.main.bundleIdentifier else { return [] }
-        return [
-            "/Library/Managed Preferences/\(NSUserName())/\(bundleID).plist",
-            "/Library/Managed Preferences/\(bundleID).plist",
-        ]
-    }
-
-    private func startWatchingManagedPreferences() {
-        for path in Self.managedPreferencesPlistPaths {
-            watchManagedPreferencesPlist(at: path)
-        }
-    }
-
-    private func watchManagedPreferencesPlist(at path: String) {
-        let fd = open(path, O_EVTONLY)
-        guard fd >= 0 else {
-            // No profile at this scope yet, watch the directory instead.
-            watchManagedPreferencesDirectoryForCreation(of: path)
-            return
-        }
-
-        let source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: fd,
-            eventMask: [.write, .delete, .rename, .extend],
-            queue: .main
-        )
-        // Drop the old source before re-arming, or each event leaves one behind.
-        source.setEventHandler { [weak self, weak source] in
-            Task { @MainActor in
-                guard let source, !source.isCancelled else { return }
-                source.cancel()
-                self?.managedPreferencesWatchSources.removeAll { $0 === source }
-                self?.scheduleManagedPreferencesChanged()
-                self?.watchManagedPreferencesPlist(at: path)
-            }
-        }
-        source.setCancelHandler {
-            close(fd)
-        }
-        source.resume()
-        managedPreferencesWatchSources.append(source)
-    }
-
-    // Cancels any pending timer first, so a burst of file events collapses into
+    // Cancels any pending timer first, so a burst of KVO calls collapses into
     // one reload 5s after the last one.
     private func scheduleManagedPreferencesChanged() {
         managedPreferencesChangeDebounceTimer?.invalidate()
         managedPreferencesChangeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in self?.reloadManagedPreferences() }
         }
-    }
-
-    // For when the plist doesn't exist yet: watch the parent directory so we
-    // notice a profile being installed. Most events there are unrelated.
-    private func watchManagedPreferencesDirectoryForCreation(of path: String) {
-        let directory = (path as NSString).deletingLastPathComponent
-        let fd = open(directory, O_EVTONLY)
-        guard fd >= 0 else { return }
-
-        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write], queue: .main)
-        source.setEventHandler { [weak self, weak source] in
-            guard FileManager.default.fileExists(atPath: path) else { return }
-            Task { @MainActor in
-                // Several events can queue up during an install. Only the first re-arms.
-                guard let source, !source.isCancelled else { return }
-                source.cancel()
-                self?.managedPreferencesWatchSources.removeAll { $0 === source }
-                // A fresh install counts as a change like any edit does.
-                self?.scheduleManagedPreferencesChanged()
-                self?.watchManagedPreferencesPlist(at: path)
-            }
-        }
-        source.setCancelHandler {
-            close(fd)
-        }
-        source.resume()
-        managedPreferencesWatchSources.append(source)
     }
 
     // MARK: - Plist watching
@@ -836,7 +769,10 @@ final class UpdateMonitor: ObservableObject {
     private func watchDirectoryForPlistCreation() {
         let directory = (Self.plistPath as NSString).deletingLastPathComponent
         let fd = open(directory, O_EVTONLY)
-        guard fd >= 0 else { return }
+        guard fd >= 0 else {
+            Self.log.error("Can't watch \(directory, privacy: .public): errno \(errno)")
+            return
+        }
 
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write], queue: .main)
         source.setEventHandler { [weak self, weak source] in
@@ -898,7 +834,10 @@ final class UpdateMonitor: ObservableObject {
     private func watchDirectoryForSoftwareUpdatePlistCreation() {
         let directory = (Self.softwareUpdatePlistPath as NSString).deletingLastPathComponent
         let fd = open(directory, O_EVTONLY)
-        guard fd >= 0 else { return }
+        guard fd >= 0 else {
+            Self.log.error("Can't watch \(directory, privacy: .public): errno \(errno)")
+            return
+        }
 
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write], queue: .main)
         source.setEventHandler { [weak self, weak source] in
@@ -1150,10 +1089,42 @@ final class UpdateMonitor: ObservableObject {
     }
 
     // "MSU_UPDATE_25F84_patch_26.5.2_major" → "25F84", or the raw identifier if
-    // it doesn't match that shape.
-    private static func buildString(fromIdentifier identifier: String) -> String {
+    // it doesn't match that shape. nil when there's no identifier.
+    private static func buildString(fromIdentifier identifier: String) -> String? {
+        guard !identifier.isEmpty else { return nil }
         let parts = identifier.split(separator: "_")
         guard parts.count > 2 else { return identifier }
         return String(parts[2])
+    }
+}
+
+// cfprefsd calls this when a profile lands, changes or goes away, and also
+// for our own saves. Can fire on any thread.
+nonisolated private final class ManagedPreferencesObserver: NSObject {
+    private let keys: [String]
+    private let onChange: @Sendable () -> Void
+
+    init(keys: [String], onChange: @escaping @Sendable () -> Void) {
+        self.keys = keys
+        self.onChange = onChange
+        super.init()
+        for key in keys {
+            UserDefaults.standard.addObserver(self, forKeyPath: key, options: [], context: nil)
+        }
+    }
+
+    deinit {
+        for key in keys {
+            UserDefaults.standard.removeObserver(self, forKeyPath: key)
+        }
+    }
+
+    override func observeValue(
+        forKeyPath keyPath: String?,
+        of object: Any?,
+        change: [NSKeyValueChangeKey: Any]?,
+        context: UnsafeMutableRawPointer?
+    ) {
+        onChange()
     }
 }

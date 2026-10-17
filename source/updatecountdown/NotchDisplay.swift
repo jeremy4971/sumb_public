@@ -138,6 +138,16 @@ enum NotchDisplay {
         return (getIOFlags(mode) & kDisplayModeDefaultFlag) != 0
     }
 
+    // The laptop screen, even when an external one is main. Nil with the lid
+    // closed, so we never resize an external monitor.
+    private static func builtInDisplay() -> CGDirectDisplayID? {
+        var count: UInt32 = 0
+        guard CGGetActiveDisplayList(0, nil, &count) == .success, count > 0 else { return nil }
+        var displays = [CGDirectDisplayID](repeating: 0, count: Int(count))
+        guard CGGetActiveDisplayList(count, &displays, &count) == .success else { return nil }
+        return displays.prefix(Int(count)).first { CGDisplayIsBuiltin($0) != 0 }
+    }
+
     // MARK: - Resolving the default / no-notch modes
 
     private struct ResolvedModes {
@@ -151,8 +161,8 @@ enum NotchDisplay {
     // Known table first, then current resolution, then a guess for hardware we
     // don't recognise.
     private static func resolve() -> ResolvedModes? {
-        let display = CGMainDisplayID()
-        guard let currentMode = CGDisplayCopyDisplayMode(display) else { return nil }
+        guard let display = builtInDisplay(),
+              let currentMode = CGDisplayCopyDisplayMode(display) else { return nil }
 
         let modes = allModes(for: display)
         guard !modes.isEmpty else { return nil }

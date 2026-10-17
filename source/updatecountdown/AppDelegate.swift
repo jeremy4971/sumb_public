@@ -25,7 +25,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var optionsWindow: NSWindow?
     private var reminderTimer: Timer?
     private var wasWithinReminderWindow = false
-    private var didSendExpiredNotification = false
     private var blinkTimer: Timer?
     private var halfSecondBlinkTimer: Timer?
     private var isBadgeDotVisible = true
@@ -116,11 +115,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         updateDockVisibility()
         refreshDockTile()
 
-        // @Published emits on subscribe, so this also applies at launch and a
-        // forced value takes effect right away.
+        // Only resize on a real change. The launch value already matches the screen.
         monitor.$hideNotch
+            .removeDuplicates()
+            .dropFirst()
             .receive(on: RunLoop.main)
             .sink { hidden in NotchDisplay.setHidden(hidden) }
+            .store(in: &cancellables)
+
+        // Keep the toggle in sync when the resolution changes in System Settings.
+        NotificationCenter.default
+            .publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, NotchDisplay.hasNotch() else { return }
+                let hidden = NotchDisplay.isHidden()
+                if self.monitor.hideNotch != hidden { self.monitor.hideNotch = hidden }
+            }
             .store(in: &cancellables)
 
         scheduler.onWindowsChanged = { [weak self] in self?.updateDockVisibility() }
@@ -165,22 +176,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         .receive(on: RunLoop.main)
         .sink { [weak self] _ in self?.updateReminderScheduling() }
         .store(in: &cancellables)
-
-        // Once per crossing. The flag resets when status leaves .expired so a
-        // later crossing can fire again.
-        monitor.$status
-            .receive(on: RunLoop.main)
-            .sink { [weak self] status in
-                guard let self else { return }
-                guard status == .expired else {
-                    self.didSendExpiredNotification = false
-                    return
-                }
-                guard !self.didSendExpiredNotification, self.monitor.notificationsEnabled else { return }
-                self.didSendExpiredNotification = true
-                self.monitor.postExpiredNotification()
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Status item rendering
@@ -526,6 +521,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private static let optionsWindowAutosaveName = "SUMBSettingsWindow"
 
     @objc private func showOptionsWindow() {
+        // KVO can miss a profile that forces the value the user already had.
+        monitor.reloadManagedPreferences()
         if optionsWindow == nil {
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: Self.optionsWindowWidth, height: Self.generalTabHeight),
@@ -671,7 +668,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             let justEntered = !wasWithinReminderWindow
             wasWithinReminderWindow = true
 
-            let interval = TimeInterval(max(1, monitor.notificationIntervalMinutes) * 60)
+            let interval = TimeInterval(max(1, monitor.notificationIntervalMinutes)) * 60
             reminderTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in self?.monitor.postReminderNotification() }
             }

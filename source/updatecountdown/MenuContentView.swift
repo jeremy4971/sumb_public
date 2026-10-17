@@ -66,7 +66,7 @@ struct MenuContentView: View {
                         .lineSpacing(2)
                         .layoutValue(key: WrapsToWidth.self, value: true)
                 }
-            } else if let version = monitor.recommendedOSVersion, let bundle = monitor.recommendedUpdateBuild {
+            } else if let version = monitor.recommendedOSVersion {
                 // Apple's catalog has something newer, but no MDM deadline.
                 // No restart warning here since nothing is being enforced.
                 HStack(spacing: 10) {
@@ -78,11 +78,13 @@ struct MenuContentView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("macOS \(version)")
                             .fontWeight(.medium)
-                        Text("Build \(bundle)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
+                        if let build = monitor.recommendedUpdateBuild {
+                            Text("Build \(build)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
                     }
                 }
 

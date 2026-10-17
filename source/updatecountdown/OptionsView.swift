@@ -53,7 +53,7 @@ struct GeneralOptionsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Hide notch", isOn: $monitor.hideNotch)
                         .disabled(!Self.hasNotch)
-                    Text("Prevent the notch from hiding your menu bar items.")
+                    Text("Experimental. Prevent the notch from hiding your menu bar items.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
