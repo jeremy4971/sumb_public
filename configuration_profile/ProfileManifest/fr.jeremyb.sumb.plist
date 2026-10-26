@@ -222,7 +222,7 @@ During a profile replacement, the system updates payloads with the same 'Payload
 			<key>pfm_default</key>
 			<false/>
 			<key>pfm_description</key>
-			<string>Turn on Demo mode, which shows a fake deadline (set in Settings) instead of the real one. Set it to false to keep users from turning it on.</string>
+			<string>Lock the Demo mode. Set it to false to keep users from turning it on.</string>
 			<key>pfm_documentation_url</key>
 			<string>https://github.com/jeremy4971/sumb_public/wiki#preference-keys</string>
 			<key>pfm_name</key>
