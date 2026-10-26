@@ -31,7 +31,8 @@ struct MenuContentView: View {
                         Text(monitor.popoverUpToDateMessage)
                             .fontWeight(.medium)
                         Text("macOS \(UpdateMonitor.currentOSVersionString())")
-                            .font(.caption)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -49,6 +50,7 @@ struct MenuContentView: View {
                         }
                         Text("⚠️ \(UpdateMonitor.formattedDateTime(target))")
                             .font(.caption)
+                            .fontWeight(.medium)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .fixedSize(horizontal: true, vertical: false)
@@ -88,7 +90,7 @@ struct MenuContentView: View {
                     }
                 }
 
-                actionButtons
+                updateButton
             }
         }
         .padding(.horizontal, 14)
@@ -128,7 +130,7 @@ struct MenuContentView: View {
         }
     }
 
-    // Opens the user's Scheduler. Hidden when popup reminders are off.
+    // Opens the user's Scheduler. Only for DDM deadlines, hidden when popup reminders are off.
     @ViewBuilder
     private var schedulerButton: some View {
         if monitor.popupEnabled {

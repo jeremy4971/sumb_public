@@ -49,6 +49,13 @@ struct SchedulerGridView: View {
         }
         .padding(20)
         .fixedSize()
+        // Escape closes the window, same as the red button.
+        .background {
+            Button("", action: onDone)
+                .keyboardShortcut(.cancelAction)
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
         .onReceive(monitor.$popupSchedulerHelp) { helpText = $0 }
     }
 }
@@ -248,6 +255,6 @@ struct SchedulerPromptView: View {
             }
         }
         .padding(20)
-        .frame(width: 420)
+        .frame(width: 470)
     }
 }

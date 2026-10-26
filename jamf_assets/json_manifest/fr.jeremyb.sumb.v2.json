@@ -2,6 +2,16 @@
     "title": "SUMB - Software Update Menu Bar (fr.jeremyb.sumb)",
     "description": "Managed settings for SUMB, a companion menu bar app for scheduled macOS updates deployed via blueprints/DDM. Preference domain: fr.jeremyb.sumb. Requires macOS 15.0 or later.",
     "properties": {
+        "demoMode": {
+            "title": "Demo Mode",
+            "description": "Lock the Demo mode. Set it to false to keep users from turning it on.",
+            "property_order": 5,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: demoMode"
+            }
+        },
         "hideIconWhenUpToDate": {
             "title": "Hide Menu Bar Icon When Up to Date",
             "description": "Remove the SUMB icon from the menu bar when the Mac is up to date.",

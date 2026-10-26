@@ -15,6 +15,8 @@
 			<string>4195D413-D5CC-4052-A25D-324C81C3C9E6</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
+			<key>demoMode</key>
+			<false/>
 			<key>hideIconWhenUpToDate</key>
 			<false/>
 			<key>hideSettings</key>

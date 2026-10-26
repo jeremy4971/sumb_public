@@ -33,7 +33,7 @@ struct updatecountdownApp: App {
 
         UserDefaults.standard.set(hidden, forKey: UpdateMonitor.Keys.hideNotch)
         if NotchDisplay.setHidden(hidden) {
-            print(hidden ? "Notch hidden." : "Default resolution restored.")
+            print(hidden ? "Notch hidden." : "Notch shown.")
             exit(0)
         } else {
             print("Failed to apply the notch setting.")

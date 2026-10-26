@@ -122,14 +122,19 @@ struct GeneralOptionsView: View {
             }
 
             Section {
-                Button("Copy settings to clipboard") {
-                    guard let xml = monitor.settingsPropertyListXML() else { return }
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(xml, forType: .string)
+                HStack {
+                    Button("Copy settings for .plist") { copy(monitor.settingsPropertyListXML()) }
+                    Button("Copy settings for .mobileconfig") { copy(monitor.settingsMobileconfigXML()) }
                 }
             }
         }
         .formStyle(.grouped)
+    }
+
+    private func copy(_ xml: String?) {
+        guard let xml else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(xml, forType: .string)
     }
 }
 

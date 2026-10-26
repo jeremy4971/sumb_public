@@ -35,29 +35,29 @@ enum NotchDisplay {
         return String(cString: buffer)
     }
 
-    // Models with a physical notch. Update as Apple ships new ones.
-    private static let notchedModelIdentifiers: Set<String> = [
-        // 14"/16" MacBook Pro, 2021 (M1 Pro / M1 Max)
-        "MacBookPro18,1", "MacBookPro18,2", "MacBookPro18,3", "MacBookPro18,4",
-        // 14"/16" MacBook Pro, 2023 (M2 Pro / M2 Max)
-        "Mac14,5", "Mac14,6", "Mac14,9", "Mac14,10",
-        // 14"/16" MacBook Pro, 2023 (M3 / M3 Pro / M3 Max)
-        "Mac15,3", "Mac15,6", "Mac15,7", "Mac15,8", "Mac15,9", "Mac15,10", "Mac15,11",
-        // MacBook Air 13"/15", 2022+ (M2, M3, M4)
-        "Mac14,2", "Mac14,15", "Mac15,12", "Mac15,13", "Mac16,12", "Mac16,13",
-        // 14"/16" MacBook Pro, 2024+ (M4 family)
-        "Mac16,1", "Mac16,5", "Mac16,6", "Mac16,7", "Mac16,8",
-    ]
+    // Models with a physical notch. Add new ones to knownResolutionsByModel.
+    private static let notchedModelIdentifiers = Set(knownResolutionsByModel.keys)
 
-    // Known models first, then the live safe-area inset as a fallback.
+    // Known models first, then the panel shape, then the live safe-area inset.
     static func hasNotch() -> Bool {
-        if notchedModelIdentifiers.contains(modelIdentifier()) {
+        if notchedModelIdentifiers.contains(modelIdentifier()) || panelHasNotch() {
             return true
         }
         for screen in NSScreen.screens where screen.safeAreaInsets.top > 0 {
             return true
         }
         return false
+    }
+
+    // Notched panels are about 1.54:1, others 16:10 or 16:9. The biggest mode
+    // keeps the full panel shape even while the notch is hidden.
+    private static func panelHasNotch() -> Bool {
+        guard let display = builtInDisplay(),
+              let largest = allModes(for: display).max(by: {
+                  $0.pixelWidth * $0.pixelHeight < $1.pixelWidth * $1.pixelHeight
+              }),
+              largest.pixelHeight > 0 else { return false }
+        return Double(largest.pixelWidth) / Double(largest.pixelHeight) < 1.58
     }
 
     // MARK: - Known default / no-notch resolutions
@@ -248,19 +248,27 @@ enum NotchDisplay {
 
     // MARK: - Public API
 
+    // Only our no-notch size counts as hidden. "More Space" and others don't.
+    private static func isNoNotch(_ resolved: ResolvedModes) -> Bool {
+        guard let noNotch = resolved.noNotchMode else { return false }
+        return sameResolution(resolved.current, noNotch)
+    }
+
     static func isHidden() -> Bool {
         guard let resolved = resolve() else { return false }
-        return !sameResolution(resolved.current, resolved.defaultMode)
+        return isNoNotch(resolved)
     }
 
     /// Switches to the no-notch resolution, or back to the default. Returns
     /// whether the requested state is in effect.
     @discardableResult
     static func setHidden(_ hidden: Bool) -> Bool {
-        guard hasNotch(), let resolved = resolve() else { return false }
+        // No notch check when showing, so a hidden notch can always be undone.
+        if hidden, !hasNotch() { return false }
+        guard let resolved = resolve() else { return false }
 
-        let alreadyHidden = !sameResolution(resolved.current, resolved.defaultMode)
-        if hidden == alreadyHidden { return true }
+        // Showing only undoes our own no-notch mode, so a user's scaled size is kept.
+        if hidden == isNoNotch(resolved) { return true }
 
         guard let target = hidden ? resolved.noNotchMode : resolved.defaultMode else {
             return false

@@ -2,12 +2,14 @@
 //  DockTileView.swift
 //  updatecountdown
 //
-//  The Dock icon with the countdown in a red badge in the corner.
+//  The Dock icon (DockIcon asset) with the countdown in a red badge in the corner.
 //
 
 import Cocoa
 
 final class DockTileView: NSView {
+
+    private static let icon = NSImage(named: "DockIcon")
 
     /// Text in the red badge. nil draws the plain icon.
     var badge: String? {
@@ -22,7 +24,7 @@ final class DockTileView: NSView {
     // Plain draw(_:) since the Dock snapshots the view as soon as display() is called.
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.current?.imageInterpolation = .high
-        NSApp.applicationIconImage?.draw(in: bounds)
+        (Self.icon ?? NSApp.applicationIconImage)?.draw(in: bounds)
 
         if let badge, !badge.isEmpty {
             drawBadge(text: badge)

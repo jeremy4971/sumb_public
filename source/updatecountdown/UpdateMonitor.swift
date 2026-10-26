@@ -474,10 +474,77 @@ final class UpdateMonitor: ObservableObject {
         hideSettings = loaded.hideSettings
     }
 
-    // Same format as configuration_profile/fr.jeremyb.sumb.plist. Demo keys
-    // and hideNotch stay out: they're per-machine.
+    // Same format as configuration_profile/fr.jeremyb.sumb.plist. demoDate, demoOSVersion
+    // and hideNotch stay out, and demoMode is always exported off.
     func settingsPropertyListXML() -> String? {
-        let settings: [String: Any] = [
+        Self.xmlString(from: exportedSettings)
+    }
+
+    // Same shape as configuration_profile/SUMB_Settings_Full.mobileconfig.
+    // New UUIDs on each copy, the profile identifier stays so it replaces the old one.
+    func settingsMobileconfigXML() -> String? {
+        let settingsUUID = UUID().uuidString
+        let organization = "YourCompany"
+        var settingsPayload = exportedSettings
+        settingsPayload.merge([
+            "PayloadDisplayName": "SUMB",
+            "PayloadIdentifier": "fr.jeremyb.sumb.\(settingsUUID)",
+            "PayloadType": "fr.jeremyb.sumb",
+            "PayloadUUID": settingsUUID,
+            "PayloadVersion": 1,
+        ]) { _, new in new }
+        let notificationsPayload: [String: Any] = [
+            "NotificationSettings": [[
+                "AlertType": 2,
+                "BundleIdentifier": "fr.jeremyb.sumb",
+                "NotificationsEnabled": true,
+                "ShowInNotificationCenter": true,
+                "SoundsEnabled": true,
+            ]],
+            "PayloadDisplayName": "Notifications Payload",
+            "PayloadIdentifier": UUID().uuidString,
+            "PayloadOrganization": organization,
+            "PayloadType": "com.apple.notificationsettings",
+            "PayloadUUID": UUID().uuidString,
+            "PayloadVersion": 1,
+        ]
+        let loginItemsUUID = UUID().uuidString
+        let loginItemsPayload: [String: Any] = [
+            "PayloadDisplayName": "Managed Login Items",
+            "PayloadIdentifier": loginItemsUUID,
+            "PayloadOrganization": organization,
+            "PayloadType": "com.apple.servicemanagement",
+            "PayloadUUID": loginItemsUUID,
+            "PayloadVersion": 1,
+            "Rules": [["RuleType": "TeamIdentifier", "RuleValue": Self.teamIdentifier]],
+        ]
+        let profile: [String: Any] = [
+            "PayloadContent": [settingsPayload, notificationsPayload, loginItemsPayload],
+            "PayloadDescription": "Configuration Profile for SUMB.",
+            "PayloadDisplayName": "SUMB Settings",
+            "PayloadIdentifier": "fr.jeremyb.sumb.profile",
+            "PayloadOrganization": organization,
+            "PayloadScope": "System",
+            "PayloadType": "Configuration",
+            "PayloadUUID": UUID().uuidString,
+            "PayloadVersion": 1,
+        ]
+        return Self.xmlString(from: profile)
+    }
+
+    // Lets the Login Items payload allow SUMB's login item.
+    private static let teamIdentifier = "73MS2PM6D7"
+
+    private static func xmlString(from plist: [String: Any]) -> String? {
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private var exportedSettings: [String: Any] {
+        [
+            Keys.demoMode: false,
             Keys.hideSettings: hideSettings,
             Keys.menubarDotBlinkingThresholdDays: menubarDotBlinkingThresholdDays,
             Keys.hideIconWhenUpToDate: hideIconWhenUpToDate,
@@ -511,10 +578,6 @@ final class UpdateMonitor: ObservableObject {
             Keys.notificationThresholdDays: notificationThresholdDays,
             Keys.showDockIcon: showDockIcon,
         ]
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: settings, format: .xml, options: 0) else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
     }
 
     init() {
