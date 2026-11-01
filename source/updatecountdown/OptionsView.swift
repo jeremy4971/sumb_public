@@ -15,7 +15,10 @@ struct GeneralOptionsView: View {
         VStack(spacing: 0) {
             generalForm
             Divider()
-            ManagedPreferencesFooterView(hasManagedPreferences: monitor.hasManagedPreferences)
+            ManagedPreferencesFooterView(
+                hasManagedPreferences: monitor.hasManagedPreferences,
+                installDate: monitor.managedProfileDate
+            )
         }
         .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -125,6 +128,7 @@ struct GeneralOptionsView: View {
                 HStack {
                     Button("Copy settings for .plist") { copy(monitor.settingsPropertyListXML()) }
                     Button("Copy settings for .mobileconfig") { copy(monitor.settingsMobileconfigXML()) }
+                    Button("Open Device Management") { openDeviceManagement() }
                 }
             }
         }
@@ -136,6 +140,12 @@ struct GeneralOptionsView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(xml, forType: .string)
     }
+
+    // Opens System Settings > General > Device Management.
+    private func openDeviceManagement() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") else { return }
+        NSWorkspace.shared.open(url)
+    }
 }
 
 struct MenubarOptionsView: View {
@@ -145,7 +155,10 @@ struct MenubarOptionsView: View {
         VStack(spacing: 0) {
             form
             Divider()
-            ManagedPreferencesFooterView(hasManagedPreferences: monitor.hasManagedPreferences)
+            ManagedPreferencesFooterView(
+                hasManagedPreferences: monitor.hasManagedPreferences,
+                installDate: monitor.managedProfileDate
+            )
         }
         .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -213,7 +226,10 @@ struct NotificationOptionsView: View {
         VStack(spacing: 0) {
             form
             Divider()
-            ManagedPreferencesFooterView(hasManagedPreferences: monitor.hasManagedPreferences)
+            ManagedPreferencesFooterView(
+                hasManagedPreferences: monitor.hasManagedPreferences,
+                installDate: monitor.managedProfileDate
+            )
         }
         .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -301,7 +317,10 @@ struct PopupOptionsView: View {
         VStack(spacing: 0) {
             schedulerForm
             Divider()
-            ManagedPreferencesFooterView(hasManagedPreferences: monitor.hasManagedPreferences)
+            ManagedPreferencesFooterView(
+                hasManagedPreferences: monitor.hasManagedPreferences,
+                installDate: monitor.managedProfileDate
+            )
         }
         .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -484,19 +503,28 @@ struct AboutOptionsView: View {
 
 private struct ManagedPreferencesFooterView: View {
     let hasManagedPreferences: Bool
+    let installDate: Date?
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: hasManagedPreferences ? "checkmark.seal.fill" : "seal")
                 .foregroundStyle(.secondary)
-            Text(hasManagedPreferences
-                 ? "These settings have been configured by a profile."
-                 : "No managed preferences detected")
+            Text(message)
+                .multilineTextAlignment(.center)
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var message: String {
+        guard hasManagedPreferences else { return "No managed preferences detected" }
+        let configured = "These settings have been configured by a profile"
+        guard let installDate else { return configured + "." }
+        let day = installDate.formatted(date: .long, time: .omitted)
+        let hour = installDate.formatted(date: .omitted, time: .shortened)
+        return "\(configured) · \(day), \(hour)."
     }
 }

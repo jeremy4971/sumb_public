@@ -41,12 +41,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }
 
     // A Dock click opens Software Update. With the Dock icon hidden, a relaunch
-    // opens Settings instead.
+    // opens Settings, but only if the menu bar icon is hidden too.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         guard NSApp.activationPolicy() == .accessory else {
-            NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
+            // Nothing to install, so just bring Settings back.
+            if isUpToDate, optionsWindow != nil {
+                showOptionsWindow()
+            } else {
+                NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
+            }
             return false
         }
+
+        // Settings is one click away in the menu bar.
+        guard statusItem?.isVisible == false else { return false }
 
         // Deferred because a notification click also lands here as a reopen.
         guard Date() >= suppressReopenUntil else { return false }

@@ -136,7 +136,8 @@ final class SchedulerController: NSObject, NSWindowDelegate {
                 onDone: { [weak self] in self?.schedulerWindow?.close() }
             )))
             window.styleMask = [.titled, .closable, .miniaturizable]
-            window.title = ""
+            // Same text as the popup title.
+            window.title = monitor.expandingVariables(in: monitor.popupTitle)
             window.isReleasedWhenClosed = false
             window.delegate = self
             // Dead center of the screen each time it opens. It's released on close.

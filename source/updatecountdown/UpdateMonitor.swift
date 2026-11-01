@@ -583,6 +583,7 @@ final class UpdateMonitor: ObservableObject {
     init() {
         managedSnapshot = Self.computeManagedSnapshot()
         managedKeys = Set(managedSnapshot.keys)
+        managedProfileDate = Self.computeManagedProfileDate()
         let loaded = Self.loadSettingsFromDefaults()
         hideSettings = loaded.hideSettings
         demoMode = loaded.demoMode
@@ -739,6 +740,21 @@ final class UpdateMonitor: ObservableObject {
     // them apart from a real profile change.
     private var managedSnapshot: [String: Any] = [:]
 
+    // When ManagedClient last wrote our managed plist, shown in the Settings footer.
+    @Published private(set) var managedProfileDate: Date?
+
+    // Newest of the computer and per-user copies. Rewritten on every profile install or update.
+    private static func computeManagedProfileDate() -> Date? {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
+        let paths = [
+            "/Library/Managed Preferences/\(bundleID).plist",
+            "/Library/Managed Preferences/\(NSUserName())/\(bundleID).plist",
+        ]
+        return paths
+            .compactMap { try? FileManager.default.attributesOfItem(atPath: $0)[.modificationDate] as? Date }
+            .max()
+    }
+
     private static func computeManagedSnapshot() -> [String: Any] {
         guard let bundleID = Bundle.main.bundleIdentifier else { return [:] }
         var snapshot: [String: Any] = [:]
@@ -759,6 +775,9 @@ final class UpdateMonitor: ObservableObject {
         if let bundleID = Bundle.main.bundleIdentifier {
             CFPreferencesAppSynchronize(bundleID as CFString)
         }
+        // Before the guard, a re-push with the same values still moves the date.
+        let profileDate = Self.computeManagedProfileDate()
+        if profileDate != managedProfileDate { managedProfileDate = profileDate }
         let snapshot = Self.computeManagedSnapshot()
         guard !NSDictionary(dictionary: snapshot).isEqual(to: managedSnapshot) else { return }
         managedSnapshot = snapshot

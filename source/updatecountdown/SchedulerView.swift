@@ -87,18 +87,32 @@ struct SchedulerGrid: View {
     private static let cellSize: CGFloat = 20
     private static let spacing: CGFloat = 2
     private static let headerHeight: CGFloat = 14
+    // Extra space between the AM/PM bands and the hour numbers.
+    private static let bandGap: CGFloat = 4
     private static let dayLabelWidth: CGFloat = 40
     private static let columnGap: CGFloat = 8
-    // Fixed frame, the eraser glyph is taller than a regular button.
-    private static let buttonIconSize = CGSize(width: 24, height: 16)
+    // Fixed height, the eraser glyph is taller than a regular button.
+    private static let buttonIconHeight: CGFloat = 16
     static let width = dayLabelWidth + columnGap + 24 * cellSize + 23 * spacing
+
+    // For day names and AM/PM. The app is English only, so the current
+    // locale would give English words.
+    private static var systemCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = UpdateMonitor.preferredLocale
+        return calendar
+    }
 
     // Short weekday names in the system language, Monday first.
     private static var dayNames: [String] {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = UpdateMonitor.preferredLocale
-        let symbols = calendar.shortStandaloneWeekdaySymbols
+        let symbols = systemCalendar.shortStandaloneWeekdaySymbols
         return Array(symbols[1...] + symbols[..<1])
+    }
+
+    // Follows the 24-hour time setting in System Settings.
+    // preferredLocale only has the language, so it would miss it.
+    private static var uses12HourClock: Bool {
+        DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .autoupdatingCurrent)?.contains("a") == true
     }
 
     var body: some View {
@@ -116,18 +130,26 @@ struct SchedulerGrid: View {
                 draft.hours = Self.emptyHours
                 onCommit()
             } label: {
-                Image(systemName: "eraser.line.dashed.fill")
-                    .frame(width: Self.buttonIconSize.width, height: Self.buttonIconSize.height)
+                Label {
+                    Text("Reset")
+                } icon: {
+                    Image(systemName: "trash.fill")
+                        .frame(height: Self.buttonIconHeight)
+                }
+                .labelStyle(.titleAndIcon)
             }
-            .accessibilityLabel("Clear")
             .disabled(!isEditable || draft.hours == Self.emptyHours)
             if let onOpenUserSchedule {
                 // Stays enabled when a profile locks the grid, the user's schedule isn't managed.
                 Button(action: onOpenUserSchedule) {
-                    Image(systemName: "person.fill")
-                        .frame(width: Self.buttonIconSize.width, height: Self.buttonIconSize.height)
+                    Label {
+                        Text("User Schedule")
+                    } icon: {
+                        Image(systemName: "person.fill")
+                            .frame(height: Self.buttonIconHeight)
+                    }
+                    .labelStyle(.titleAndIcon)
                 }
-                .accessibilityLabel("My schedule")
             }
             if let onDone {
                 // Blue even when SwiftUI doesn't pick up the default look on its own.
@@ -140,24 +162,35 @@ struct SchedulerGrid: View {
     }
 
     private var grid: some View {
-        HStack(alignment: .top, spacing: Self.columnGap) {
-            VStack(alignment: .leading, spacing: Self.spacing) {
-                Color.clear.frame(height: Self.headerHeight)
+        let is12h = Self.uses12HourClock
+        let headerTotal = Self.headerHeight + (is12h ? Self.headerHeight + Self.bandGap + Self.spacing : 0)
+        return HStack(alignment: .top, spacing: Self.columnGap) {
+            VStack(alignment: .trailing, spacing: Self.spacing) {
+                Color.clear.frame(height: headerTotal)
                 ForEach(Array(Self.dayNames.enumerated()), id: \.offset) { _, name in
                     Text(name)
-                        .frame(width: Self.dayLabelWidth, height: Self.cellSize, alignment: .leading)
+                        .frame(width: Self.dayLabelWidth, height: Self.cellSize, alignment: .trailing)
                 }
             }
 
             VStack(alignment: .leading, spacing: Self.spacing) {
+                // AM and PM bands in the system language, 12-hour clock only.
+                if is12h {
+                    let calendar = Self.systemCalendar
+                    HStack(spacing: Self.spacing) {
+                        periodBand(calendar.amSymbol)
+                        periodBand(calendar.pmSymbol)
+                    }
+                    .padding(.bottom, Self.bandGap)
+                }
                 HStack(spacing: Self.spacing) {
                     ForEach(0..<24, id: \.self) { hour in
-                        hourLabel(hour)
+                        hourLabel(hour, is12h: is12h)
                     }
                 }
                 // Closes the last box. An overlay, so the grid width doesn't change.
                 .overlay(alignment: .trailing) {
-                    hourLabel(24)
+                    hourLabel(24, is12h: is12h)
                         .offset(x: Self.cellSize + Self.spacing)
                 }
                 // Half a box to the left, so each hour sits on the line where it starts.
@@ -167,11 +200,27 @@ struct SchedulerGrid: View {
         }
     }
 
-    private func hourLabel(_ hour: Int) -> some View {
-        Text("\(hour)")
+    // With a 12-hour clock, 13 shows as 1.
+    private func hourLabel(_ hour: Int, is12h: Bool) -> some View {
+        let shown = is12h ? (hour % 12 == 0 ? 12 : hour % 12) : hour
+        return Text("\(shown)")
             .font(.caption2.monospacedDigit())
             .foregroundStyle(.secondary)
             .frame(width: Self.cellSize, height: Self.headerHeight)
+    }
+
+    // ──── AM ──── over 12 boxes, a bit inset so the two bands don't touch.
+    private func periodBand(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Rectangle().fill(.tertiary).frame(height: 1)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize()
+            Rectangle().fill(.tertiary).frame(height: 1)
+        }
+        .padding(.horizontal, 3)
+        .frame(width: 12 * Self.cellSize + 11 * Self.spacing, height: Self.headerHeight)
     }
 
     private var cells: some View {
