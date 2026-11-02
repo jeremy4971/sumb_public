@@ -3,7 +3,7 @@
 set -e # Exit immediately if a command exits with a non-zero status
 
 TEAM_ID="73MS2PM6D7"
-DOWNLOAD_URL="https://github.com/jeremy4971/sumb_public/releases/download/v2.0.2/SUMB-2.0.2.pkg"
+DOWNLOAD_URL="https://github.com/jeremy4971/sumb_public/releases/download/v2.0.3/SUMB-2.0.3.pkg"
 
 # Create a temporary directory for the download
 TMP_DIR=$(mktemp -d)
