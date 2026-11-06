@@ -1,4 +1,4 @@
-![sumb-banner](https://github.com/jeremy4971/sumb_public/blob/main/screenshots/sumb_banner2.jpg)
+<img width="1672" alt="sumb-banner-v2" src="https://github.com/user-attachments/assets/c1c596fb-56b0-492a-a212-b56b29460386" />
 
 ## SUMB · Software Update Menu Bar
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/jeremy4971/sumb_public/total?color=978A89)](https://github.com/jeremy4971/sumb_public/releases) [![Github](https://img.shields.io/badge/mdm-compatible-A79C9B)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/languages-%20fully%20customizable-758498)](https://github.com/jeremy4971/sumb_public/wiki) [![Github](https://img.shields.io/badge/security-signed_--_notarized-8796A8)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-practices) [![Github](https://img.shields.io/badge/codeql_--_fable-passing-5E707F)](https://github.com/jeremy4971/sumb_public?tab=security-ov-file#security-practices)
