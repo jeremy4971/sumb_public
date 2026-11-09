@@ -1,4 +1,4 @@
-name: Claude Swift Review
+name: Claude Opus Review
 
 on:
   workflow_dispatch:
