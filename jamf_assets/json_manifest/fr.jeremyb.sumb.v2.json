@@ -55,7 +55,7 @@
         },
         "menubarPrefix": {
             "title": "Day Prefix",
-            "description": "Text placed before the number of days remaining in the menu bar countdown.",
+            "description": "Text placed before the number of days remaining in the menu bar countdown. E.g., D-.",
             "property_order": 50,
             "type": "string",
             "default": "",
@@ -65,7 +65,7 @@
         },
         "menubarPreparingMessage": {
             "title": "Updating Menu Bar Text",
-            "description": "Text shown in the menu bar while the update is being prepared.",
+            "description": "Text displayed in the menu bar once the enforcement deadline has passed.",
             "property_order": 60,
             "type": "string",
             "default": "Preparing update...",
@@ -106,7 +106,7 @@
         },
         "notificationSound": {
             "title": "Alert Sound",
-            "description": "Alert sound, played with the notification and the popup reminder. Type only the filename with its extension, not the full path. Leave empty for the system default tone. Only files located in /System/Library/Sounds are supported (e.g., Blow.aiff Sosumi.aiff Morse.aiff).",
+            "description": "Alert sound played with the notification and the popup reminder. Only files located in /System/Library/Sounds are supported. Type only the filename with its extension, not the full path (e.g., Blow.aiff Sosumi.aiff Morse.aiff). Leave empty for the system default tone.",
             "property_order": 100,
             "type": "string",
             "default": "",
@@ -269,7 +269,7 @@
         },
         "popupEnabled": {
             "title": "Enable Popup Reminders",
-            "description": "Show the popup reminder at the start of each allowed hour.",
+            "description": "Allow SUMB to post popup reminders about the enforced macOS update.",
             "property_order": 260,
             "type": "boolean",
             "default": false,
