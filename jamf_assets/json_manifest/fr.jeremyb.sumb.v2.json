@@ -32,6 +32,16 @@
                 "infoText": "Key name: hideSettings"
             }
         },
+        "hideStatus": {
+            "title": "Hide Status",
+            "description": "Hide the download and disk space status in the popover.",
+            "property_order": 25,
+            "type": "boolean",
+            "default": false,
+            "options": {
+                "infoText": "Key name: hideStatus"
+            }
+        },
         "ignoreAppleUpdateChannel": {
             "title": "Ignore Apple Update Channel",
             "description": "Ignore updates from the standard Apple software update channel; only take managed update declarations (DDM) into account.",
