@@ -14,6 +14,9 @@ If you discover a security vulnerability in this project, please report it priva
 SUMB requires read-only access to these locations :
 * `/private/var/db/softwareupdate/SoftwareUpdateDDMStatePersistence.plist`
 * `/Library/Preferences/com.apple.SoftwareUpdate.plist`
+* `/System/Library/AssetsV2/downloadDir/`
+* `/System/Library/AssetsV2/com_apple_MobileAsset_MacSoftwareUpdate/`
+* `/System/Volumes/Update/Update.plist`
 * `/System/Library/Sounds/`
 
 
