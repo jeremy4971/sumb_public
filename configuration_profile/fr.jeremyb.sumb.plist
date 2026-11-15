@@ -8,6 +8,8 @@
 	<false/>
 	<key>hideSettings</key>
 	<false/>
+	<key>hideStatus</key>
+	<false/>
 	<key>ignoreAppleUpdateChannel</key>
 	<false/>
 	<key>menubarDotBlinkingThresholdDays</key>
