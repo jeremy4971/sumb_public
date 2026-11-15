@@ -21,6 +21,13 @@ final class UpdateMonitor: ObservableObject {
     // still spot a newer macOS when nothing has been scheduled.
     static let softwareUpdatePlistPath = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
 
+    // What mobileassetd and softwareupdated leave on disk while fetching and
+    // preparing an update. All listable by any user.
+    nonisolated static let assetDownloadPath = "/System/Library/AssetsV2/downloadDir"
+    nonisolated static let macUpdateAssetsPath = "/System/Library/AssetsV2/com_apple_MobileAsset_MacSoftwareUpdate"
+    nonisolated static let preparedUpdatePlistPath = "/System/Volumes/Update/Update.plist"
+    nonisolated private static let macUpdateDownloadPrefix = "com_apple_MobileAsset_MacSoftwareUpdate."
+
     private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "updatecountdown", category: "UpdateMonitor")
 
     // Below this, show a live HH:mm:ss countdown instead of a day count.
@@ -28,7 +35,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - UserDefaults keys
 
-    // Internal, not private, so OptionsView can call isManaged(_:) per field.
     enum Keys {
         static let demoMode = "demoMode"
         static let demoDate = "demoDate"
@@ -72,8 +78,8 @@ final class UpdateMonitor: ObservableObject {
         ]
         // The user's own schedule from the Scheduler window, so not in Keys.all.
         static let schedulerHours = "schedulerHours"
-        // Backs the "Hide settings" toggle. A profile can lock it.
         static let hideSettings = "hideSettings"
+        static let hideStatus = "hideStatus"
 
         // hideNotch is missing on purpose, see the property below.
         static let all: [String] = [
@@ -86,12 +92,10 @@ final class UpdateMonitor: ObservableObject {
             menubarPrefix, menubarSuffix,
             popupSchedulerHelp, popupTitle, popupBody,
             popupRescheduleButton, popupUpdateButton,
-            hideSettings,
+            hideSettings, hideStatus,
         ] + scheduleDays
     }
 
-    // The category itself is registered once at launch in AppDelegate, not on
-    // every post.
     nonisolated static let updateActionIdentifier = "OPEN_SOFTWARE_UPDATE"
     nonisolated static let reminderCategoryIdentifier = "UPDATE_REMINDER"
 
@@ -104,7 +108,6 @@ final class UpdateMonitor: ObservableObject {
     // watching the monitor each second. Changes go out on countdownTextChanged.
     private(set) var countdownText: String?
 
-    /// Fires after countdownText changes.
     let countdownTextChanged = PassthroughSubject<Void, Never>()
 
     /// Seconds left while the live HH:mm:ss countdown shows, nil otherwise.
@@ -129,6 +132,20 @@ final class UpdateMonitor: ObservableObject {
     }
 
     @Published private(set) var status: Status = .none
+
+    enum UpdateProgress: Equatable {
+        case pendingDownload
+        case downloading
+        case preparing
+        case readyToInstall
+    }
+
+    /// Where the pending update stands, nil when there's none.
+    @Published private(set) var updateProgress: UpdateProgress?
+
+    /// Free space under 23 GB for a major update, 10 GB for a minor one,
+    /// only while the download is pending.
+    @Published private(set) var isLowDiskSpace = false
 
     // MARK: - Demo mode
 
@@ -161,7 +178,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Dock icon
 
-    /// Shows the Dock icon while an update is available. Off never shows it.
     @Published var showDockIcon: Bool {
         didSet { UserDefaults.standard.set(showDockIcon, forKey: Keys.showDockIcon) }
     }
@@ -245,11 +261,13 @@ final class UpdateMonitor: ObservableObject {
         didSet { UserDefaults.standard.set(popoverUpToDateMessage, forKey: Keys.popoverUpToDateMessage) }
     }
 
+
+
+
     @Published var menubarPreparingMessage: String {
         didSet { UserDefaults.standard.set(menubarPreparingMessage, forKey: Keys.menubarPreparingMessage) }
     }
 
-    /// Goes before the day count, e.g. "D-" for "D-4". Empty by default.
     @Published var menubarPrefix: String {
         didSet {
             UserDefaults.standard.set(menubarPrefix, forKey: Keys.menubarPrefix)
@@ -257,7 +275,6 @@ final class UpdateMonitor: ObservableObject {
         }
     }
 
-    /// Goes after the day count, e.g. "4d" or "4j".
     @Published var menubarSuffix: String {
         didSet {
             UserDefaults.standard.set(menubarSuffix, forKey: Keys.menubarSuffix)
@@ -340,7 +357,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Timers
 
-    // kqueue-backed, so nothing polls.
     private var fileWatchSource: DispatchSourceFileSystemObject?
     private var softwareUpdatePlistWatchSource: DispatchSourceFileSystemObject?
     // A save takes several steps, so read once the file has settled.
@@ -350,6 +366,7 @@ final class UpdateMonitor: ObservableObject {
     // launch. KVO, so a missing Managed Preferences folder doesn't matter.
     private var managedPreferencesObserver: ManagedPreferencesObserver?
     private var displayTimer: Timer?
+    private var diskCheck: (date: Date, bytes: Int64?)?
     // An MDM push often writes the plist several times within a few seconds, so
     // reloadManagedPreferences() runs once, 5s after the last change.
     private var managedPreferencesChangeDebounceTimer: Timer?
@@ -387,6 +404,7 @@ final class UpdateMonitor: ObservableObject {
         let popupUpdateButton: String
         let suggestedSchedule: [Int]
         let hideSettings: Bool
+        let hideStatus: Bool
     }
 
     private static func loadSettingsFromDefaults() -> LoadedSettings {
@@ -437,7 +455,8 @@ final class UpdateMonitor: ObservableObject {
             suggestedSchedule: Keys.scheduleDays.enumerated().map { day, key in
                 hoursMask(from: defaults.string(forKey: key) ?? (day < 5 ? "12,17" : ""))
             },
-            hideSettings: (defaults.object(forKey: Keys.hideSettings) as? Bool) ?? false
+            hideSettings: (defaults.object(forKey: Keys.hideSettings) as? Bool) ?? false,
+            hideStatus: (defaults.object(forKey: Keys.hideStatus) as? Bool) ?? false
         )
     }
 
@@ -472,6 +491,7 @@ final class UpdateMonitor: ObservableObject {
         popupUpdateButton = loaded.popupUpdateButton
         suggestedSchedule = loaded.suggestedSchedule
         hideSettings = loaded.hideSettings
+        hideStatus = loaded.hideStatus
     }
 
     // Same format as configuration_profile/fr.jeremyb.sumb.plist. demoDate, demoOSVersion
@@ -546,6 +566,7 @@ final class UpdateMonitor: ObservableObject {
         [
             Keys.demoMode: false,
             Keys.hideSettings: hideSettings,
+            Keys.hideStatus: hideStatus,
             Keys.menubarDotBlinkingThresholdDays: menubarDotBlinkingThresholdDays,
             Keys.hideIconWhenUpToDate: hideIconWhenUpToDate,
             Keys.ignoreAppleUpdateChannel: ignoreAppleUpdateChannel,
@@ -586,6 +607,7 @@ final class UpdateMonitor: ObservableObject {
         managedProfileDate = Self.computeManagedProfileDate()
         let loaded = Self.loadSettingsFromDefaults()
         hideSettings = loaded.hideSettings
+        hideStatus = loaded.hideStatus
         demoMode = loaded.demoMode
         demoDate = loaded.demoDate
         demoOSVersion = loaded.demoOSVersion
@@ -630,7 +652,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Public
 
-    /// Reads the plist, or the demo values, and refreshes everything.
     func reload() {
         if demoMode {
             targetDate = demoDate
@@ -642,11 +663,13 @@ final class UpdateMonitor: ObservableObject {
         }
 
         recomputeDisplay()
+        reloadUpdateProgress()
     }
 
     // A real system signal, so demoMode doesn't apply here the way it does in
     // reload() above.
     private func reloadRecommendedUpdate() {
+        defer { reloadUpdateProgress() }
         guard !ignoreAppleUpdateChannel,
               let found = Self.readRecommendedMacOSUpdate(),
               Self.compareVersions(Self.currentOSVersionString(), found.version) < 0 else {
@@ -660,8 +683,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Reminder notification
 
-    /// Used by both the automatic schedule and the "Send Test Notification"
-    /// button in Options.
     func postReminderNotification() {
         guard !notificationBody.isEmpty else { return }
 
@@ -684,11 +705,11 @@ final class UpdateMonitor: ObservableObject {
         return UNNotificationSound(named: UNNotificationSoundName(notificationSound))
     }
 
-    // Same sound for the Scheduler popup. Empty or not found plays the
-    // system alert sound, like the notification's default.
+    // Same sound for the Scheduler popup. Empty plays the user's alert sound,
+    // like the notification's default.
     func playAlertSound() {
         let name = (notificationSound as NSString).deletingPathExtension
-        let sound = name.isEmpty ? nil : NSSound(named: name)
+        let sound = name.isEmpty ? userAlertSound() : NSSound(named: name)
         // Shared instance, play() fails while it's still playing.
         sound?.stop()
         if sound?.play() != true {
@@ -696,8 +717,22 @@ final class UpdateMonitor: ObservableObject {
         }
     }
 
-    // Read from disk rather than hard-coded, since the list can change between
-    // macOS releases.
+    private var defaultAlertSound: (path: String, sound: NSSound)?
+
+    // Plays the file behind System Settings' alert sound, since beep() is
+    // sometimes silent right after launch.
+    private func userAlertSound() -> NSSound? {
+        let defaults = UserDefaults.standard
+        guard let path = defaults.string(forKey: "com.apple.sound.beep.sound") else { return nil }
+        if defaultAlertSound?.path != path {
+            guard let sound = NSSound(contentsOf: URL(fileURLWithPath: path), byReference: true) else { return nil }
+            defaultAlertSound = (path, sound)
+        }
+        let sound = defaultAlertSound?.sound
+        sound?.volume = (defaults.object(forKey: "com.apple.sound.beep.volume") as? NSNumber)?.floatValue ?? 1
+        return sound
+    }
+
     static let availableSystemSounds: [String] = {
         let files = (try? FileManager.default.contentsOfDirectory(atPath: "/System/Library/Sounds")) ?? []
         return files.filter { $0.hasSuffix(".aiff") }.sorted()
@@ -786,12 +821,10 @@ final class UpdateMonitor: ObservableObject {
         applySettings(Self.loadSettingsFromDefaults())
     }
 
-    /// Whether a profile forces `key`. Used to grey out a control.
     func isManaged(_ key: String) -> Bool {
         managedKeys.contains(key)
     }
 
-    /// Drives the "configured by a profile" footer in Options.
     var hasManagedPreferences: Bool {
         !managedKeys.isEmpty
     }
@@ -802,8 +835,14 @@ final class UpdateMonitor: ObservableObject {
         didSet { UserDefaults.standard.set(hideSettings, forKey: Keys.hideSettings) }
     }
 
-    // Cancels any pending timer first, so a burst of KVO calls collapses into
-    // one reload 5s after the last one.
+    /// Hides the download and low disk space line in the popover.
+    @Published var hideStatus: Bool {
+        didSet {
+            UserDefaults.standard.set(hideStatus, forKey: Keys.hideStatus)
+            reloadUpdateProgress()
+        }
+    }
+
     private func scheduleManagedPreferencesChanged() {
         managedPreferencesChangeDebounceTimer?.invalidate()
         managedPreferencesChangeDebounceTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { [weak self] _ in
@@ -821,7 +860,6 @@ final class UpdateMonitor: ObservableObject {
 
         let fd = open(Self.plistPath, O_EVTONLY)
         guard fd >= 0 else {
-            // Doesn't exist yet, watch the directory instead.
             watchDirectoryForPlistCreation()
             return
         }
@@ -847,7 +885,6 @@ final class UpdateMonitor: ObservableObject {
         fileWatchSource = source
     }
 
-    // Waits for softwareupdated to create the plist.
     private func watchDirectoryForPlistCreation() {
         let directory = (Self.plistPath as NSString).deletingLastPathComponent
         let fd = open(directory, O_EVTONLY)
@@ -872,7 +909,6 @@ final class UpdateMonitor: ObservableObject {
         fileWatchSource = source
     }
 
-    // Each new event pushes the read back, so it happens 1s after the last one.
     private func schedulePlistReload() {
         plistReloadDebounceTimer?.invalidate()
         plistReloadDebounceTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
@@ -882,8 +918,6 @@ final class UpdateMonitor: ObservableObject {
 
     // MARK: - Software update plist watching
 
-    // Same re-arm-on-every-event approach as startWatchingPlist(), but for
-    // Apple's catalog.
     private func startWatchingSoftwareUpdatePlist() {
         softwareUpdatePlistWatchSource?.cancel()
         softwareUpdatePlistWatchSource = nil
@@ -944,6 +978,82 @@ final class UpdateMonitor: ObservableObject {
         }
     }
 
+    // MARK: - Update progress
+
+    // downloadDir folder means downloading, Update.plist ready, a .asset alone
+    // preparing. Nothing means pending. Called on menu open.
+    func reloadUpdateProgress() {
+        if hideStatus {
+            if updateProgress != nil { updateProgress = nil }
+            if isLowDiskSpace { isLowDiskSpace = false }
+            return
+        }
+        let progress: UpdateProgress?
+        if status == .none && recommendedOSVersion == nil {
+            progress = nil
+        } else if demoMode {
+            progress = .pendingDownload
+        } else if Self.hasMacUpdateDownloadFolder() {
+            progress = .downloading
+        } else if FileManager.default.fileExists(atPath: Self.preparedUpdatePlistPath) {
+            progress = .readyToInstall
+        } else if Self.hasDownloadedMacUpdateAsset() {
+            progress = .preparing
+        } else {
+            progress = .pendingDownload
+        }
+        if updateProgress != progress { updateProgress = progress }
+
+        let lowDisk: Bool
+        // Once downloading, macOS has already checked the space.
+        if progress == .pendingDownload, let available = cachedAvailableDiskBytes() {
+            let target = status != .none ? targetOSVersion : recommendedOSVersion
+            lowDisk = available < Self.requiredFreeBytes(major: Self.isMajorUpdate(target: target))
+        } else {
+            lowDisk = false
+        }
+        if isLowDiskSpace != lowDisk { isLowDiskSpace = lowDisk }
+    }
+
+    // Decimal GB, like Finder.
+    nonisolated static func requiredFreeBytes(major: Bool) -> Int64 {
+        major ? 23_000_000_000 : 10_000_000_000
+    }
+
+    // The purgeable lookup takes a few ms, and free space barely moves in a minute.
+    private func cachedAvailableDiskBytes() -> Int64? {
+        if let diskCheck, diskCheck.date.timeIntervalSinceNow > -60 { return diskCheck.bytes }
+        let bytes = Self.availableDiskBytes()
+        diskCheck = (Date(), bytes)
+        return bytes
+    }
+
+    // Finder's "Available", purgeable space included since macOS frees it for an update.
+    nonisolated static func availableDiskBytes() -> Int64? {
+        let values = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        return values?.volumeAvailableCapacityForImportantUsage
+    }
+
+    // 28.0 on 27.2.1 is major. Unparsable counts as minor, the lower bar.
+    static func isMajorUpdate(target: String?) -> Bool {
+        guard let targetMajor = target?.split(separator: ".").first.flatMap({ Int($0) }),
+              let currentMajor = currentOSVersionString().split(separator: ".").first.flatMap({ Int($0) }) else {
+            return false
+        }
+        return targetMajor > currentMajor
+    }
+
+    // Other asset types use downloadDir too.
+    nonisolated private static func hasMacUpdateDownloadFolder() -> Bool {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: assetDownloadPath)) ?? []
+        return names.contains { $0.hasPrefix(macUpdateDownloadPrefix) }
+    }
+
+    nonisolated private static func hasDownloadedMacUpdateAsset() -> Bool {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: macUpdateAssetsPath)) ?? []
+        return names.contains { $0.hasSuffix(".asset") }
+    }
+
     // MARK: - Display computation
 
     private func recomputeDisplay() {
@@ -955,8 +1065,6 @@ final class UpdateMonitor: ObservableObject {
             return
         }
 
-        // Running version already at or above the target: the update no longer
-        // applies, so show nothing.
         if let targetVersion = targetOSVersion,
            Self.compareVersions(Self.currentOSVersionString(), targetVersion) >= 0 {
             setDisplay(status: .none, countdownText: nil)
@@ -1003,8 +1111,6 @@ final class UpdateMonitor: ObservableObject {
         }
     }
 
-    // Every second inside the urgent window so HH:mm:ss ticks live, every minute
-    // otherwise.
     private func scheduleDisplayTimer() {
         displayTimer?.invalidate()
         let remaining = targetDate?.timeIntervalSinceNow ?? -1

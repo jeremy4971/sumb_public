@@ -42,7 +42,6 @@ struct updatecountdownApp: App {
     }
 
     var body: some Scene {
-        // No visible windows; the app lives entirely in the menu bar.
         Settings {
             EmptyView()
         }

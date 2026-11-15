@@ -23,7 +23,6 @@ struct GeneralOptionsView: View {
         .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    // The hardware doesn't change mid-run, so check once.
     private static let hasNotch = NotchDisplay.hasNotch()
 
     private var generalForm: some View {
@@ -38,17 +37,17 @@ struct GeneralOptionsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Hide menu bar icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
-                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideIconWhenUpToDate))
-                    Text("Launch SUMB.app to re-open settings.")
+                    Toggle("Show Dock icon", isOn: $monitor.showDockIcon)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.showDockIcon))
+                    Text("Visible only when there is an update available.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Show Dock icon", isOn: $monitor.showDockIcon)
-                        .disabled(monitor.isManaged(UpdateMonitor.Keys.showDockIcon))
-                    Text("Visible only when there is an update available.")
+                    Toggle("Hide menu bar icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideIconWhenUpToDate))
+                    Text("Launch SUMB.app to re-open settings.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -69,17 +68,25 @@ struct GeneralOptionsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Hide status", isOn: $monitor.hideStatus)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideStatus))
+                    Text("Hide the download and disk space status in the popover.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 // Not tied to the notification toggle, the popup plays it too.
                 VStack(alignment: .leading, spacing: 4) {
                     LabeledContent("Alert sound") {
                         HStack {
-                            // Previews the sound through a real notification, even when a profile locks it.
+                            // Previews the sound, even when a profile locks it.
                             Button {
-                                monitor.postReminderNotification()
+                                monitor.playAlertSound()
                             } label: {
                                 Image(systemName: "play.fill")
                             }
-                            .accessibilityLabel("Send Test Notification")
+                            .accessibilityLabel("Play Alert Sound")
 
                             Picker("", selection: $monitor.notificationSound) {
                                 Text("Default").tag("")
@@ -117,6 +124,7 @@ struct GeneralOptionsView: View {
 
                 LabeledContent("Target OS version") {
                     TextField("", text: $monitor.demoOSVersion)
+                        .resignsWhenDisabled()
                         .labelsHidden()
                         .frame(width: 100)
                 }
@@ -141,7 +149,6 @@ struct GeneralOptionsView: View {
         NSPasteboard.general.setString(xml, forType: .string)
     }
 
-    // Opens System Settings > General > Device Management.
     private func openDeviceManagement() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Profiles-Settings.extension") else { return }
         NSWorkspace.shared.open(url)
@@ -167,9 +174,11 @@ struct MenubarOptionsView: View {
         Form {
             Section("Popover") {
                 TextField("Title", text: $monitor.popoverTitle)
+                    .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverTitle))
 
                 TextField("Update button", text: $monitor.popoverUpdateButton)
+                    .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverUpdateButton))
 
                 MultilineField(label: "Restart warning", text: $monitor.popoverFooter,
@@ -177,6 +186,7 @@ struct MenubarOptionsView: View {
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverFooter))
 
                 TextField("Up-to-date message", text: $monitor.popoverUpToDateMessage)
+                    .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverUpToDateMessage))
             }
 
@@ -185,6 +195,7 @@ struct MenubarOptionsView: View {
                     LabeledContent("Dot blinking") {
                         HStack(alignment: .firstTextBaseline) {
                             TextField("", value: $monitor.menubarDotBlinkingThresholdDays, format: .number)
+                                .resignsWhenDisabled()
                                 .labelsHidden()
                                 .frame(width: 50)
                             Text("days before update")
@@ -197,11 +208,12 @@ struct MenubarOptionsView: View {
                 }
 
                 TextField("Updating text", text: $monitor.menubarPreparingMessage)
+                    .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.menubarPreparingMessage))
 
-                // Same labelsHidden() fix as on the Notification tab.
                 LabeledContent("Day prefix") {
                     TextField("", text: $monitor.menubarPrefix)
+                        .resignsWhenDisabled()
                         .labelsHidden()
                         .frame(width: 50)
                 }
@@ -209,6 +221,7 @@ struct MenubarOptionsView: View {
 
                 LabeledContent("Day suffix") {
                     TextField("", text: $monitor.menubarSuffix)
+                        .resignsWhenDisabled()
                         .labelsHidden()
                         .frame(width: 50)
                 }
@@ -237,14 +250,11 @@ struct NotificationOptionsView: View {
     private var form: some View {
         Form {
             Section {
-                // Plain HStack so the label stays centered with the switch.
                 HStack {
                     Text("Enable notification")
                     Spacer()
                     Button("Send Test Notification") { monitor.postReminderNotification() }
                     Button("Settings") { openNotificationSettings() }
-                    // Nested in an HStack, the Form no longer restyles it,
-                    // so it falls back to a checkbox without this.
                     Toggle("Enable notification", isOn: $monitor.notificationsEnabled)
                         .labelsHidden()
                         .toggleStyle(.switch)
@@ -253,11 +263,10 @@ struct NotificationOptionsView: View {
             }
 
             Section {
-                // macOS 27 leaves room for an empty label, hence labelsHidden().
-                // Baseline alignment keeps the unit level with the number.
                 LabeledContent("Notification starting") {
                     HStack(alignment: .firstTextBaseline) {
                         TextField("", value: $monitor.notificationThresholdDays, format: .number)
+                            .resignsWhenDisabled()
                             .labelsHidden()
                             .frame(width: 50)
                         Text("days before update")
@@ -269,6 +278,7 @@ struct NotificationOptionsView: View {
                 LabeledContent("Every") {
                     HStack(alignment: .firstTextBaseline) {
                         TextField("", value: $monitor.notificationIntervalMinutes, format: .number)
+                            .resignsWhenDisabled()
                             .labelsHidden()
                             .frame(width: 50)
                         Text("minutes")
@@ -278,6 +288,7 @@ struct NotificationOptionsView: View {
                 .opacity(monitor.notificationsEnabled ? 1 : 0.4)
 
                 TextField("Title", text: $monitor.notificationTitle)
+                    .resignsWhenDisabled()
                     .disabled(!monitor.notificationsEnabled || monitor.isManaged(UpdateMonitor.Keys.notificationTitle))
                     .opacity(monitor.notificationsEnabled ? 1 : 0.4)
 
@@ -290,8 +301,6 @@ struct NotificationOptionsView: View {
         .formStyle(.grouped)
     }
 
-    // Opens the Notifications pane with SUMB already selected. The id query
-    // takes the app's bundle identifier.
     private func openNotificationSettings() {
         let identifier = Bundle.main.bundleIdentifier ?? "fr.jeremyb.sumb"
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(identifier)") else { return }
@@ -328,7 +337,6 @@ struct PopupOptionsView: View {
     private var schedulerForm: some View {
         Form {
             Section {
-                // Same row layout as on the Notification tab.
                 HStack {
                     HStack(spacing: 4) {
                         Text("Enable popup reminders")
@@ -344,10 +352,10 @@ struct PopupOptionsView: View {
             }
 
             Section {
-                // Same layout as Notification starting.
                 LabeledContent("Popup reminder starting") {
                     HStack(alignment: .firstTextBaseline) {
                         TextField("", value: $monitor.popupThresholdDays, format: .number)
+                            .resignsWhenDisabled()
                             .labelsHidden()
                             .frame(width: 50)
                         Text("days before update")
@@ -357,6 +365,7 @@ struct PopupOptionsView: View {
                 .opacity(monitor.popupEnabled ? 1 : 0.4)
 
                 TextField("Title", text: $monitor.popupTitle)
+                    .resignsWhenDisabled()
                     .disabled(!monitor.popupEnabled || monitor.isManaged(UpdateMonitor.Keys.popupTitle))
                     .opacity(monitor.popupEnabled ? 1 : 0.4)
 
@@ -366,10 +375,12 @@ struct PopupOptionsView: View {
                     .opacity(monitor.popupEnabled ? 1 : 0.4)
 
                 TextField("Reschedule button", text: $monitor.popupRescheduleButton)
+                    .resignsWhenDisabled()
                     .disabled(!monitor.popupEnabled || monitor.isManaged(UpdateMonitor.Keys.popupRescheduleButton))
                     .opacity(monitor.popupEnabled ? 1 : 0.4)
 
                 TextField("Update button", text: $monitor.popupUpdateButton)
+                    .resignsWhenDisabled()
                     .disabled(!monitor.popupEnabled || monitor.isManaged(UpdateMonitor.Keys.popupUpdateButton))
                     .opacity(monitor.popupEnabled ? 1 : 0.4)
             }
@@ -381,7 +392,6 @@ struct PopupOptionsView: View {
             }
 
             Section {
-                // Saved after each change, like any other setting.
                 SchedulerGrid(draft: draft, isEditable: !isScheduleManaged, onColor: .green,
                               onOpenUserSchedule: onOpenUserSchedule, onCommit: {
                     if monitor.suggestedSchedule != draft.hours {
@@ -396,19 +406,16 @@ struct PopupOptionsView: View {
             }
         }
         .formStyle(.grouped)
-        // Follows a profile change.
         .onReceive(monitor.$suggestedSchedule) { hours in
             if draft.hours != hours { draft.hours = hours }
         }
     }
 
-    // One locked day locks the whole grid.
     private var isScheduleManaged: Bool {
         UpdateMonitor.Keys.scheduleDays.contains(where: monitor.isManaged)
     }
 }
 
-// Small "i" button that shows a longer explanation in a popover.
 private struct InfoButton: View {
     let text: String
     @State private var isShown = false
@@ -436,16 +443,14 @@ private struct MultilineField: View {
     @Binding var text: String
     let lines: Int
     var caption: String?
+    @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
 
-            TextEditor(text: $text)
+            editor
                 .font(.body)
-                // Form's value column would right-align it otherwise.
-                .multilineTextAlignment(.leading)
-                .scrollContentBackground(.hidden)
                 .padding(Self.editorPadding)
                 .frame(maxWidth: .infinity)
                 .frame(height: Self.editorHeight(lines: lines))
@@ -467,13 +472,45 @@ private struct MultilineField: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // A disabled TextEditor can still take focus and be typed into, so show plain text.
+    @ViewBuilder private var editor: some View {
+        if isEnabled {
+            TextEditor(text: $text)
+                .multilineTextAlignment(.leading)
+                .scrollContentBackground(.hidden)
+        } else {
+            ScrollView {
+                Text(verbatim: text)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
     private static let editorPadding: CGFloat = 4
 
-    // Measured from the font metrics so it still fits if the text size changes.
     private static func editorHeight(lines: Int) -> CGFloat {
         let font = NSFont.preferredFont(forTextStyle: .body)
         let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
         return lineHeight * CGFloat(lines) + editorPadding * 2
+    }
+}
+
+// Drops focus when a field gets locked (profile or toggle) while it's being edited.
+private struct ResignWhenDisabled: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func body(content: Content) -> some View {
+        content.onChange(of: isEnabled) { _, enabled in
+            if !enabled { NSApp.keyWindow?.makeFirstResponder(nil) }
+        }
+    }
+}
+
+private extension View {
+    func resignsWhenDisabled() -> some View {
+        modifier(ResignWhenDisabled())
     }
 }
 

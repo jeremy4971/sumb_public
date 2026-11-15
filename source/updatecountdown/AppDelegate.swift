@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private var optionsWindow: NSWindow?
     private var reminderTimer: Timer?
-    private var wasWithinReminderWindow = false
+    private var lastReminderDate: Date?
     private var blinkTimer: Timer?
     private var halfSecondBlinkTimer: Timer?
     private var isBadgeDotVisible = true
@@ -35,7 +35,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private static let notificationReopenGrace: TimeInterval = 0.5
 
-    // SUMB lives in the menu bar; closing Options is not quitting.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
@@ -44,7 +43,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // opens Settings, but only if the menu bar icon is hidden too.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         guard NSApp.activationPolicy() == .accessory else {
-            // Nothing to install, so just bring Settings back.
             if isUpToDate, optionsWindow != nil {
                 showOptionsWindow()
             } else {
@@ -53,7 +51,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             return false
         }
 
-        // Settings is one click away in the menu bar.
         guard statusItem?.isVisible == false else { return false }
 
         // Deferred because a notification click also lands here as a reopen.
@@ -73,7 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         suppressReopenUntil = Date().addingTimeInterval(Self.notificationReopenGrace)
     }
 
-    // Same rule as the right-click menu: hidden under lockdown unless Option is held.
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         guard !monitor.hideSettings || NSEvent.modifierFlags.contains(.option) else { return nil }
         let menu = NSMenu()
@@ -89,8 +85,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
         if let button = statusItem.button {
             button.imagePosition = .imageLeading
-            // Same font as the system clock: fixed-width digits, so the icon
-            // doesn't shift around as the digits change.
             button.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
             button.target = self
             button.action = #selector(handleStatusItemClick(_:))
@@ -148,7 +142,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
-        // Registered once at launch, and again only if the button label is edited.
         monitor.$popoverUpdateButton
             .receive(on: RunLoop.main)
             .sink { title in
@@ -171,7 +164,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // because the demo date already sits inside the threshold window.
         monitor.$demoMode
             .filter { $0 }
-            .sink { [weak self] _ in self?.wasWithinReminderWindow = true }
+            .sink { [weak self] _ in self?.lastReminderDate = Date() }
             .store(in: &cancellables)
 
         Publishers.Merge5(
@@ -182,8 +175,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             monitor.$status.map { _ in () }
         )
         .receive(on: RunLoop.main)
-        .sink { [weak self] _ in self?.updateReminderScheduling() }
+        .sink { [weak self] _ in self?.checkReminder() }
         .store(in: &cancellables)
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.checkReminder() }
+        }
+        timer.tolerance = 5
+        reminderTimer = timer
     }
 
     // MARK: - Status item rendering
@@ -192,7 +191,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // resolve against the current appearance when AppKit draws them.
     private static let baseSymbolConfig = NSImage.SymbolConfiguration(textStyle: .body, scale: .large)
 
-    // Black or white at 85%, so the gear feels a bit translucent.
     private static let gearOpacity: CGFloat = 0.85
 
     private static let solidGearColor = makeGearColor(alpha: 1)
@@ -239,7 +237,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }()
 
     private static let upToDateStatusImage: NSImage? = {
-        // Template image: monochrome, matches the menu bar.
         let image = NSImage(systemSymbolName: "gear.badge.checkmark", accessibilityDescription: nil)?
             .withSymbolConfiguration(baseSymbolConfig)
         image?.isTemplate = true
@@ -255,11 +252,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             button.title = monitor.countdownText.map { " \($0)" } ?? ""
             showsRedBadge = true
         case .expired:
-            // Deadline passed but macOS hasn't updated yet.
             button.title = " \(monitor.menubarPreparingMessage)"
             showsRedBadge = true
         case .none where monitor.recommendedOSVersion != nil:
-            // No MDM deadline, but a newer macOS version is available.
             button.title = ""
             showsRedBadge = true
         case .none:
@@ -290,7 +285,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         isBadgeDotVisible ? Self.badgedStatusImage : Self.badgeDotHiddenStatusImage
     }
 
-    // Blinks the red dot, 0.5 s on and 0.5 s off.
     private func updateBadgeBlinking(_ active: Bool) {
         halfSecondBlinkTimer?.invalidate()
         halfSecondBlinkTimer = nil
@@ -345,21 +339,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let policy: NSApplication.ActivationPolicy = showsDock ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)
-        if showsDock { NSApp.dockTile.display() }
+        if showsDock { refreshDockTile(force: true) }
     }
 
     // The menu bar countdown in the badge, "!" past the deadline. Up to date,
     // the content view is removed so the Dock draws the regular icon.
-    private func refreshDockTile() {
+    private func refreshDockTile(force: Bool = false) {
+        // Nothing to draw while the Dock icon is hidden.
+        guard NSApp.activationPolicy() == .regular else { return }
+
         let badge: String?
         switch monitor.status {
         case .scheduled: badge = monitor.countdownText
         case .expired: badge = "!"
-        // A newer macOS with no deadline.
         case .none: badge = isUpToDate ? nil : "1"
         }
 
-        guard badge != dockTileView.badge else { return }
+        guard force || badge != dockTileView.badge else { return }
         dockTileView.centersBadge = monitor.countdownSeconds != nil
         dockTileView.badge = badge
         NSApp.dockTile.contentView = badge == nil ? nil : dockTileView
@@ -380,6 +376,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     private func showMainMenu() {
         let menu = mainMenu ?? makeMainMenu()
+
+        // Before measuring, so the state line is up to date.
+        monitor.reloadUpdateProgress()
 
         // Re-measured on every open since the content changes shape between states.
         // Zeroing the frame first stops the old width acting as a minimum.
@@ -518,14 +517,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Menubar tab's Grid wasn't reliable.
     // One width for every tab, the Scheduler's hour grid needs it.
     private static let optionsWindowWidth: CGFloat = 660
-    private static let generalTabHeight: CGFloat = 600
+    private static let generalTabHeight: CGFloat = 654
     private static let menubarTabHeight: CGFloat = 550
     private static let notificationTabHeight: CGFloat = 360
-    // Taller for the grid, the Form scrolls the rest.
     private static let popupTabHeight: CGFloat = 650
     private static let aboutTabHeight: CGFloat = 260
 
-    // Saved as "NSWindow Frame SUMBSettingsWindow" in defaults.
     private static let optionsWindowAutosaveName = "SUMBSettingsWindow"
 
     @objc private func showOptionsWindow() {
@@ -539,7 +536,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 defer: false
             )
             window.isReleasedWhenClosed = false
-            // Compact, centered-title toolbar to match tabStyle = .toolbar below.
             window.toolbarStyle = .preference
 
             let generalItem = NSTabViewItem(viewController: Self.makeHostingController(
@@ -587,7 +583,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             let tabViewController = OptionsTabViewController()
             tabViewController.tabStyle = .toolbar
             tabViewController.tabViewItems = [generalItem, menubarItem, notificationItem, popupItem, aboutItem]
-            // Reopen on the last tab, as the HIG suggests for settings windows.
             if tabViewController.tabViewItems.indices.contains(savedIndex) {
                 tabViewController.selectedTabViewItemIndex = savedIndex
             }
@@ -603,7 +598,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             window.center()
             if window.setFrameUsingName(Self.optionsWindowAutosaveName, force: true),
                let size = selectedItem.viewController?.preferredContentSize {
-                // Keep the saved spot but use the current tab height.
                 let topLeft = NSPoint(x: window.frame.minX, y: window.frame.maxY)
                 window.setContentSize(size)
                 window.setFrameTopLeftPoint(topLeft)
@@ -621,8 +615,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         if let window = optionsWindow {
             if window.isMiniaturized { window.deminiaturize(nil) }
             window.makeKeyAndOrderFront(nil)
-            // In case activation lags behind.
             window.orderFrontRegardless()
+            (window.contentViewController as? OptionsTabViewController)?.clearFocus()
         }
     }
 
@@ -651,57 +645,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     // MARK: - Reminder notification
 
-    // Self-rescheduling: arms the repeating timer if we're already inside the
-    // threshold window, otherwise a one-shot that wakes up when it starts.
-    private func updateReminderScheduling() {
-        reminderTimer?.invalidate()
-        reminderTimer = nil
-
-        // .scheduled already rules out "no update" and an OS that meets the
-        // target, so this guard alone stops reminders once up to date.
-        guard monitor.notificationsEnabled, monitor.status == .scheduled, let target = monitor.targetDate else {
-            wasWithinReminderWindow = false
-            return
-        }
-
-        let remaining = target.timeIntervalSinceNow
-        guard remaining > 0 else {
-            wasWithinReminderWindow = false
-            return
-        }
-
+    // Runs every minute and on settings changes. Compares wall clock dates, so
+    // sleep can't delay it more than a minute.
+    private func checkReminder() {
+        // .scheduled already rules out "no update" and an OS that meets the target.
         let windowStart = TimeInterval(monitor.notificationThresholdDays) * 24 * 60 * 60
-
-        if remaining <= windowStart {
-            let justEntered = !wasWithinReminderWindow
-            wasWithinReminderWindow = true
-
-            let interval = TimeInterval(max(1, monitor.notificationIntervalMinutes)) * 60
-            reminderTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.monitor.postReminderNotification() }
-            }
-
-            if justEntered {
-                monitor.postReminderNotification()
-            }
-        } else {
-            wasWithinReminderWindow = false
-            let delay = remaining - windowStart
-            reminderTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.updateReminderScheduling() }
-            }
+        guard monitor.notificationsEnabled, monitor.status == .scheduled,
+              let remaining = monitor.targetDate?.timeIntervalSinceNow,
+              remaining > 0, remaining <= windowStart else {
+            lastReminderDate = nil
+            return
         }
+
+        let interval = TimeInterval(max(1, monitor.notificationIntervalMinutes)) * 60
+        if let last = lastReminderDate, Date().timeIntervalSince(last) < interval - 1 { return }
+
+        monitor.postReminderNotification()
+        lastReminderDate = Date()
     }
 
     // MARK: - UNUserNotificationCenterDelegate
 
-    // Show it even when the app is frontmost, e.g. with the Options window open.
+    // Show it and play its sound even when the app is frontmost, e.g. with the
+    // Settings window open.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .list])
+        completionHandler([.banner, .list, .sound])
     }
 
     // Tapping the action button or the notification itself opens the Software
@@ -725,7 +697,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     }
 }
 
-// Keeps the Options window title in sync with the selected tab.
 final class OptionsTabViewController: NSTabViewController {
     static let selectedTabKey = "optionsSelectedTab"
 
@@ -733,5 +704,14 @@ final class OptionsTabViewController: NSTabViewController {
         super.tabView(tabView, didSelect: tabViewItem)
         view.window?.title = tabViewItem?.label ?? ""
         UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.selectedTabKey)
+        clearFocus()
+    }
+
+    // No field starts focused, AppKit would pick the first one (even a locked editor).
+    // Async because SwiftUI can assign focus after layout.
+    func clearFocus() {
+        DispatchQueue.main.async { [weak self] in
+            self?.view.window?.makeFirstResponder(nil)
+        }
     }
 }

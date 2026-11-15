@@ -19,7 +19,6 @@ final class SchedulerDraft: ObservableObject {
     }
 }
 
-// The Scheduler window: help text above the grid.
 struct SchedulerGridView: View {
     // Not observed: the help text comes in through onReceive.
     let monitor: UpdateMonitor
@@ -44,7 +43,6 @@ struct SchedulerGridView: View {
                     .frame(width: SchedulerGrid.width, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            // Clearing empties the grid. Closing it empty follows the suggested schedule.
             SchedulerGrid(draft: draft, onDone: onDone)
         }
         .padding(20)
@@ -60,38 +58,29 @@ struct SchedulerGridView: View {
     }
 }
 
-// Days, hours, boxes and the clear button. Shared by the window and Settings.
 struct SchedulerGrid: View {
     @ObservedObject var draft: SchedulerDraft
     var isEditable = true
-    // Selected boxes. Settings uses green for the suggested hours.
     var onColor: Color = .blue
-    // Shows a button that opens the user's own Scheduler window.
     var onOpenUserSchedule: (() -> Void)? = nil
-    // Shows an OK button, the window passes it to close itself.
     var onDone: (() -> Void)? = nil
-    // Called after each drag and after a clear.
     var onCommit: () -> Void = {}
 
     @State private var paintValue: Bool?
     @Environment(\.colorScheme) private var colorScheme
 
-    // Light grey in dark mode, plain white is too bright there.
     private var offColor: Color {
         colorScheme == .dark ? Color(white: 0.75) : .white
     }
 
-    // What the clear button puts back.
     private static let emptyHours = Array(repeating: 0, count: 7)
 
     private static let cellSize: CGFloat = 20
     private static let spacing: CGFloat = 2
     private static let headerHeight: CGFloat = 14
-    // Extra space between the AM/PM bands and the hour numbers.
     private static let bandGap: CGFloat = 4
     private static let dayLabelWidth: CGFloat = 40
     private static let columnGap: CGFloat = 8
-    // Fixed height, the eraser glyph is taller than a regular button.
     private static let buttonIconHeight: CGFloat = 16
     static let width = dayLabelWidth + columnGap + 24 * cellSize + 23 * spacing
 
@@ -103,7 +92,6 @@ struct SchedulerGrid: View {
         return calendar
     }
 
-    // Short weekday names in the system language, Monday first.
     private static var dayNames: [String] {
         let symbols = systemCalendar.shortStandaloneWeekdaySymbols
         return Array(symbols[1...] + symbols[..<1])
@@ -131,7 +119,7 @@ struct SchedulerGrid: View {
                 onCommit()
             } label: {
                 Label {
-                    Text("Reset")
+                    Text(BuiltInStrings.current.reset)
                 } icon: {
                     Image(systemName: "trash.fill")
                         .frame(height: Self.buttonIconHeight)
@@ -152,7 +140,6 @@ struct SchedulerGrid: View {
                 }
             }
             if let onDone {
-                // Blue even when SwiftUI doesn't pick up the default look on its own.
                 Button("OK", action: onDone)
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
@@ -174,7 +161,6 @@ struct SchedulerGrid: View {
             }
 
             VStack(alignment: .leading, spacing: Self.spacing) {
-                // AM and PM bands in the system language, 12-hour clock only.
                 if is12h {
                     let calendar = Self.systemCalendar
                     HStack(spacing: Self.spacing) {
@@ -188,19 +174,16 @@ struct SchedulerGrid: View {
                         hourLabel(hour, is12h: is12h)
                     }
                 }
-                // Closes the last box. An overlay, so the grid width doesn't change.
                 .overlay(alignment: .trailing) {
                     hourLabel(24, is12h: is12h)
                         .offset(x: Self.cellSize + Self.spacing)
                 }
-                // Half a box to the left, so each hour sits on the line where it starts.
                 .offset(x: -(Self.cellSize + Self.spacing) / 2)
                 cells
             }
         }
     }
 
-    // With a 12-hour clock, 13 shows as 1.
     private func hourLabel(_ hour: Int, is12h: Bool) -> some View {
         let shown = is12h ? (hour % 12 == 0 ? 12 : hour % 12) : hour
         return Text("\(shown)")
@@ -209,7 +192,6 @@ struct SchedulerGrid: View {
             .frame(width: Self.cellSize, height: Self.headerHeight)
     }
 
-    // ──── AM ──── over 12 boxes, a bit inset so the two bands don't touch.
     private func periodBand(_ text: String) -> some View {
         HStack(spacing: 6) {
             Rectangle().fill(.tertiary).frame(height: 1)

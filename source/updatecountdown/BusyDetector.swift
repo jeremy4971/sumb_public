@@ -34,7 +34,6 @@ enum BusyDetector {
         "com.apple.QuickTimePlayerX", "com.colliderli.iina", "org.videolan.vlc",
     ]
 
-    // One of those apps has a window covering a whole display.
     // Window bounds don't need Screen Recording, only titles do.
     private static var isFullScreenAppShown: Bool {
         let pids = Set(fullScreenApps.flatMap {

@@ -14,7 +14,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
 
     private let monitor: UpdateMonitor
 
-    /// Called when the Scheduler window opens or closes, for the Dock icon.
     var onWindowsChanged: (() -> Void)?
 
     private var schedulerWindow: NSWindow?
@@ -55,7 +54,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
             .sink { [weak self] _ in self?.evaluate() }
             .store(in: &cancellables)
 
-        // A monitor plugged in or removed while it shows: rebuild on the current screens.
         NotificationCenter.default
             .publisher(for: NSApplication.didChangeScreenParametersNotification)
             .receive(on: RunLoop.main)
@@ -69,7 +67,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
 
     // MARK: - Timing
 
-    // Managed deadlines only, within the threshold. Stops at the deadline, like notifications.
     private var isInPopupWindow: Bool {
         guard monitor.status == .scheduled, let target = monitor.targetDate else { return false }
         return target.timeIntervalSinceNow <= TimeInterval(monitor.popupThresholdDays) * 24 * 60 * 60
@@ -81,7 +78,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
         busyRetryTimer = nil
 
         let now = Date()
-        // An unanswered popup stays as is, no second one.
         guard monitor.popupEnabled,
               promptPanels.isEmpty,
               let hourStart = Calendar.current.dateInterval(of: .hour, for: now)?.start,
@@ -90,7 +86,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
               monitor.isSchedulerHourOn(at: now)
         else { return }
 
-        // Wait out calls and Keynote/PowerPoint slideshows, retry each minute.
         if BusyDetector.isBusy {
             scheduleBusyRetry()
             return
@@ -135,12 +130,14 @@ final class SchedulerController: NSObject, NSWindowDelegate {
                 // Closing saves, see windowWillClose.
                 onDone: { [weak self] in self?.schedulerWindow?.close() }
             )))
-            window.styleMask = [.titled, .closable, .miniaturizable]
-            // Same text as the popup title.
+            window.styleMask = [.titled, .closable]
             window.title = monitor.expandingVariables(in: monitor.popupTitle)
+            // Floats like the popup, so other apps can't push it back.
+            window.level = .floating
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            window.hidesOnDeactivate = false
             window.isReleasedWhenClosed = false
             window.delegate = self
-            // Dead center of the screen each time it opens. It's released on close.
             if let screen = NSScreen.main ?? NSScreen.screens.first, let content = window.contentView {
                 window.setContentSize(content.fittingSize)
                 let size = window.frame.size
@@ -154,7 +151,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
         // Same as Settings, NSApp.activate() alone can be refused.
         NSApp.activate(ignoringOtherApps: true)
         if let window = schedulerWindow {
-            if window.isMiniaturized { window.deminiaturize(nil) }
             window.makeKeyAndOrderFront(nil)
             window.orderFrontRegardless()
         }
@@ -181,7 +177,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
 
     // MARK: - Popup
 
-    /// Also used by the Option menu to test it, whatever the schedule says.
     func showPrompt(playSound: Bool = true) {
         guard promptPanels.isEmpty else {
             promptPanels.forEach { $0.orderFrontRegardless() }
@@ -192,9 +187,14 @@ final class SchedulerController: NSObject, NSWindowDelegate {
         for panel in promptPanels {
             panel.orderFrontRegardless()
         }
-        // Keyboard goes to the main screen's copy, so Return and Escape work there.
-        let main = NSScreen.main
-        (promptPanels.first { $0.screen == main } ?? promptPanels.first)?.makeKey()
+        // Keys stay with the app being typed in for 1 s, so a stray Return
+        // doesn't press Update Now. Then the main screen's copy gets them.
+        let keyPanel = promptPanels.first { $0.screen == NSScreen.main } ?? promptPanels.first
+        Task { @MainActor [weak self, weak keyPanel] in
+            try? await Task.sleep(for: .seconds(1))
+            guard let self, let keyPanel, self.promptPanels.contains(keyPanel) else { return }
+            keyPanel.makeKey()
+        }
 
         if playSound { monitor.playAlertSound() }
     }
@@ -218,7 +218,6 @@ final class SchedulerController: NSObject, NSWindowDelegate {
             defer: false
         )
         let host = NSHostingController(rootView: view)
-        // The title bar is hidden, so don't leave room for it.
         host.safeAreaRegions = []
         panel.contentViewController = host
         panel.titleVisibility = .hidden
@@ -251,13 +250,11 @@ final class SchedulerController: NSObject, NSWindowDelegate {
         }
     }
 
-    // Counts as this hour's popup, so the next one waits for the next allowed hour.
     private func later() {
         lastPromptedHour = Calendar.current.dateInterval(of: .hour, for: Date())?.start
         dismissPrompt()
     }
 
-    // Comes back at the next allowed hour if macOS still hasn't updated.
     private func updateNow() {
         NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
         later()

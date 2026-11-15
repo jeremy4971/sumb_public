@@ -35,10 +35,8 @@ enum NotchDisplay {
         return String(cString: buffer)
     }
 
-    // Models with a physical notch. Add new ones to knownResolutionsByModel.
     private static let notchedModelIdentifiers = Set(knownResolutionsByModel.keys)
 
-    // Known models first, then the panel shape, then the live safe-area inset.
     static func hasNotch() -> Bool {
         if notchedModelIdentifiers.contains(modelIdentifier()) || panelHasNotch() {
             return true
@@ -100,7 +98,6 @@ enum NotchDisplay {
         "Mac16,7": KnownResolutionPair(defaultSize: (1728, 1117), noNotchSize: (1728, 1080)),
     ]
 
-    // Fallback: match by current default resolution instead of model.
     private static let knownResolutionsByDefaultSize: [String: KnownResolutionPair] = {
         var map: [String: KnownResolutionPair] = [:]
         for pair in knownResolutionsByModel.values {
@@ -123,7 +120,6 @@ enum NotchDisplay {
         a.width == b.width && a.height == b.height
     }
 
-    // pixelWidth > width means the mode is scaled (Retina).
     private static func isHiDPI(_ mode: CGDisplayMode) -> Bool {
         mode.pixelWidth > mode.width
     }
@@ -132,7 +128,6 @@ enum NotchDisplay {
         modes.first { $0.width == width && $0.height == height }
     }
 
-    // False when CGDisplayModeGetIOFlags couldn't be resolved.
     private static func isDriverFlaggedDefault(_ mode: CGDisplayMode) -> Bool {
         guard let getIOFlags = cgDisplayModeGetIOFlags else { return false }
         return (getIOFlags(mode) & kDisplayModeDefaultFlag) != 0

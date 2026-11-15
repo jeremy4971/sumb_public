@@ -3,7 +3,7 @@
 //  updatecountdown
 //
 //  What you see when clicking the menu bar icon: the update deadline, the
-//  restart warning, the Scheduler and Update Now buttons.
+//  restart warning, the Scheduler, Update Now and Check for Updates buttons.
 //
 
 import SwiftUI
@@ -15,8 +15,11 @@ struct MenuContentView: View {
 
     var body: some View {
         PopoverStack(spacing: 10) {
-            Text(monitor.popoverTitle)
-                .font(.headline)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(monitor.popoverTitle)
+                    .font(.headline)
+                progressLineIfAny
+            }
 
             Divider()
 
@@ -36,6 +39,8 @@ struct MenuContentView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                softwareUpdateButton(BuiltInStrings.current.checkForUpdates)
             } else if monitor.status != .none, let target = monitor.targetDate {
                 HStack(spacing: 10) {
                     Image(updateImageName(for: monitor.targetOSVersion))
@@ -90,11 +95,43 @@ struct MenuContentView: View {
                     }
                 }
 
-                updateButton
+                softwareUpdateButton(monitor.popoverUpdateButton)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Update progress
+
+    @ViewBuilder private var progressLineIfAny: some View {
+        if let progress = monitor.updateProgress {
+            progressLine(for: progress)
+        }
+    }
+
+    private func progressLine(for progress: UpdateMonitor.UpdateProgress) -> some View {
+        Text(lineText(progress))
+            .font(.caption)
+            //.fontWeight(.medium)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+    }
+
+    // "Pending download · Low disk space"
+    private func lineText(_ progress: UpdateMonitor.UpdateProgress) -> String {
+        let text = progressText(for: progress)
+        return monitor.isLowDiskSpace ? "\(text) · \(BuiltInStrings.current.lowDiskSpace)" : text
+    }
+
+    private func progressText(for progress: UpdateMonitor.UpdateProgress) -> String {
+        switch progress {
+        case .pendingDownload: BuiltInStrings.current.pending
+        case .downloading: BuiltInStrings.current.downloading
+        case .preparing: BuiltInStrings.current.preparing
+        case .readyToInstall: BuiltInStrings.current.ready
+        }
     }
 
     // MARK: - Restart warning
@@ -122,15 +159,13 @@ struct MenuContentView: View {
 
     // MARK: - Actions
 
-    // Under the version block, the update button fills the row.
     private var actionButtons: some View {
         HStack(spacing: 8) {
             schedulerButton
-            updateButton
+            softwareUpdateButton(monitor.popoverUpdateButton)
         }
     }
 
-    // Opens the user's Scheduler. Only for DDM deadlines, hidden when popup reminders are off.
     @ViewBuilder
     private var schedulerButton: some View {
         if monitor.popupEnabled {
@@ -141,11 +176,11 @@ struct MenuContentView: View {
         }
     }
 
-    private var updateButton: some View {
+    private func softwareUpdateButton(_ title: String) -> some View {
         Button {
             openSoftwareUpdate()
         } label: {
-            Text(monitor.popoverUpdateButton)
+            Text(title)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
         }
@@ -159,8 +194,8 @@ struct MenuContentView: View {
 
 // MARK: - Layout
 
-// VStack sized by its content, except views marked WrapsToWidth that wrap
-// to that width. A plain Text would stretch the popover to its one-line width.
+// VStack sized by its content. Views marked WrapsToWidth can widen it up to 270pt,
+// then wrap and the popover shrinks to their widest line.
 private struct PopoverStack: Layout {
     var spacing: CGFloat
 
@@ -183,11 +218,29 @@ private struct PopoverStack: Layout {
 
     private func width(for proposal: ProposedViewSize, subviews: Subviews) -> CGFloat {
         if let width = proposal.width, width.isFinite { return width }
-        return subviews
-            .filter { !$0[WrapsToWidth.self] }
-            .map { $0.sizeThatFits(.unspecified).width }
-            .max() ?? 0
+        let idealWidths = { (wraps: Bool) in
+            subviews
+                .filter { $0[WrapsToWidth.self] == wraps }
+                .map { $0.sizeThatFits(.unspecified).width }
+                .max() ?? 0
+        }
+        let base = idealWidths(false)
+        let wrapIdeal = idealWidths(true)
+        let capped = max(base, min(wrapIdeal, Self.maxWrapWidth))
+        guard wrapIdeal > capped else { return capped }
+
+        // Wrapped lines rarely fill the cap, so shrink to the widest one.
+        let wrapping = subviews.filter { $0[WrapsToWidth.self] }
+        let sizes = { (width: CGFloat) in
+            wrapping.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+        }
+        let atCap = sizes(capped)
+        let shrunk = max(base, atCap.map(\.width).max() ?? 0)
+        let fewerOrSameLines = zip(sizes(shrunk), atCap).allSatisfy { $0.height <= $1.height }
+        return fewerOrSameLines ? shrunk : capped
     }
+
+    private static let maxWrapWidth: CGFloat = 270
 }
 
 private nonisolated struct WrapsToWidth: LayoutValueKey {

@@ -16,7 +16,6 @@ final class DockTileView: NSView {
         didSet { needsDisplay = true }
     }
 
-    // Centered for the wide live HH:mm:ss, in the corner otherwise.
     var centersBadge = false {
         didSet { needsDisplay = true }
     }
@@ -31,8 +30,6 @@ final class DockTileView: NSView {
         }
     }
 
-    // Looks like the system Dock badge. Grows to the left into a capsule
-    // when the text is wider than the circle.
     private func drawBadge(text: String) {
         let diameter = bounds.width * 0.34
         let center = NSPoint(x: bounds.width * 0.82, y: bounds.height * 0.82)
@@ -64,8 +61,6 @@ final class DockTileView: NSView {
         CTLineDraw(line, context)
     }
 
-    // Shrinks the font until the text fits, so HH:mm:ss or a long prefix stays inside.
-    // Fixed-width digits keep the live countdown from jiggling.
     private static func fittingFont(for text: String, startSize: CGFloat, maxWidth: CGFloat) -> NSFont {
         var size = startSize
         while true {
