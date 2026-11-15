@@ -45,14 +45,6 @@ struct GeneralOptionsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Hide menu bar icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
-                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideIconWhenUpToDate))
-                    Text("Launch SUMB.app to re-open settings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
                     Toggle("Hide notch", isOn: $monitor.hideNotch)
                         .disabled(!Self.hasNotch)
                     Text("Experimental. Prevent the notch from hiding your menu bar items.")
@@ -64,14 +56,6 @@ struct GeneralOptionsView: View {
                     Toggle("Hide settings", isOn: $monitor.hideSettings)
                         .disabled(monitor.isManaged(UpdateMonitor.Keys.hideSettings))
                     Text("Option-right-clicking the menu bar icon will reveal the settings menu.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Hide status", isOn: $monitor.hideStatus)
-                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideStatus))
-                    Text("Hide the download and disk space status in the popover.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -188,9 +172,25 @@ struct MenubarOptionsView: View {
                 TextField("Up-to-date message", text: $monitor.popoverUpToDateMessage)
                     .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverUpToDateMessage))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Hide status", isOn: $monitor.hideStatus)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideStatus))
+                    Text("Hide the download and disk space status in the popover.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Menubar") {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Hide icon when up-to-date", isOn: $monitor.hideIconWhenUpToDate)
+                        .disabled(monitor.isManaged(UpdateMonitor.Keys.hideIconWhenUpToDate))
+                    Text("Launch SUMB.app to re-open settings.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     LabeledContent("Dot blinking") {
                         HStack(alignment: .firstTextBaseline) {

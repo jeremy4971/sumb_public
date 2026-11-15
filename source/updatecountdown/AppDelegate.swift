@@ -517,8 +517,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // Menubar tab's Grid wasn't reliable.
     // One width for every tab, the Scheduler's hour grid needs it.
     private static let optionsWindowWidth: CGFloat = 660
-    private static let generalTabHeight: CGFloat = 654
-    private static let menubarTabHeight: CGFloat = 550
+    private static let generalTabHeight: CGFloat = 546
+    private static let menubarTabHeight: CGFloat = 660
     private static let notificationTabHeight: CGFloat = 360
     private static let popupTabHeight: CGFloat = 650
     private static let aboutTabHeight: CGFloat = 260
