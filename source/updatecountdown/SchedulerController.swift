@@ -19,7 +19,7 @@ final class SchedulerController: NSObject, NSWindowDelegate {
     private var schedulerWindow: NSWindow?
     private var schedulerDraft: SchedulerDraft?
     // One per screen while the popup shows.
-    private var promptPanels: [NSPanel] = []
+    private var promptPanels: [PromptPanel] = []
     private var hourTimer: Timer?
     private var busyRetryTimer: Timer?
     // Start of the hour the popup last showed in, so it shows once per hour.
@@ -184,22 +184,19 @@ final class SchedulerController: NSObject, NSWindowDelegate {
         }
 
         promptPanels = NSScreen.screens.map(makePromptPanel(on:))
+        // Return is ignored for 2 s so a stray press doesn't hit Update Now.
+        let ignoreUntil = ProcessInfo.processInfo.systemUptime + 2
         for panel in promptPanels {
+            panel.ignoresReturnUntil = ignoreUntil
             panel.orderFrontRegardless()
         }
-        // Keys stay with the app being typed in for 1 s, so a stray Return
-        // doesn't press Update Now. Then the main screen's copy gets them.
         let keyPanel = promptPanels.first { $0.screen == NSScreen.main } ?? promptPanels.first
-        Task { @MainActor [weak self, weak keyPanel] in
-            try? await Task.sleep(for: .seconds(1))
-            guard let self, let keyPanel, self.promptPanels.contains(keyPanel) else { return }
-            keyPanel.makeKey()
-        }
+        keyPanel?.makeKey()
 
         if playSound { monitor.playAlertSound() }
     }
 
-    private func makePromptPanel(on screen: NSScreen) -> NSPanel {
+    private func makePromptPanel(on screen: NSScreen) -> PromptPanel {
         let view = SchedulerPromptView(
             monitor: monitor,
             onReschedule: { [weak self] in
@@ -211,7 +208,7 @@ final class SchedulerController: NSObject, NSWindowDelegate {
 
         // Non-activating so it floats over any app, even full screen, without
         // switching the frontmost app.
-        let panel = NSPanel(
+        let panel = PromptPanel(
             contentRect: .zero,
             styleMask: [.titled, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
@@ -258,5 +255,25 @@ final class SchedulerController: NSObject, NSWindowDelegate {
     private func updateNow() {
         NSWorkspace.shared.open(UpdateMonitor.softwareUpdateURL)
         later()
+    }
+}
+
+/// Swallows Return and keypad Enter pressed before `ignoresReturnUntil` (system uptime).
+private final class PromptPanel: NSPanel {
+    var ignoresReturnUntil: TimeInterval = 0
+
+    private func isIgnoredReturn(_ event: NSEvent) -> Bool {
+        event.type == .keyDown
+            && (event.keyCode == 36 || event.keyCode == 76)
+            && event.timestamp < ignoresReturnUntil
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        isIgnoredReturn(event) || super.performKeyEquivalent(with: event)
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        guard !isIgnoredReturn(event) else { return }
+        super.sendEvent(event)
     }
 }
