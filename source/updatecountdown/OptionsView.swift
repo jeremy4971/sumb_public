@@ -165,7 +165,7 @@ struct MenubarOptionsView: View {
                     .resignsWhenDisabled()
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverUpdateButton))
 
-                MultilineField(label: "Restart warning", text: $monitor.popoverFooter,
+                MultilineField(label: "Footer text", text: $monitor.popoverFooter,
                                lines: 3, caption: "Link: [text](https://example.com)")
                     .disabled(monitor.isManaged(UpdateMonitor.Keys.popoverFooter))
 
