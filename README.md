@@ -45,3 +45,4 @@ If you are looking for similar tools, here are several other projects worth chec
 * [Nudge](https://github.com/macadmins/nudge) : The original gangster.
 * [SupportApp](https://github.com/root3nl/supportapp) : macOS menu bar app for organizations.
 * [DDM OS Reminder](https://github.com/dan-snelson/DDM-OS-Reminder) : Pop-up reminders via swiftDialog.
+* [DDM Update Companion](https://github.com/ecubrooks/DDM-Update-Companion) : Upper-right corner reminder.
